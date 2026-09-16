@@ -32,3 +32,10 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+
+  e2e:
+    build: ./e2e
+    depends_on:
+      - preview
+    volumes:
+      - ./e2e/shots:/shots

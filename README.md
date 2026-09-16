@@ -12,6 +12,7 @@ Astro 5 (static output) · React 19 islands for the interactive pieces · TypeSc
 docker compose up --build dev          # http://localhost:4321 — hot reload, bind-mounted source
 docker compose run --rm --build test   # astro check + eslint + prettier --check + vitest
 docker compose up --build preview      # http://localhost:8080 — production build behind nginx (read-only, non-root)
+docker compose run --rm --build e2e    # Playwright smoke test against the preview: routes, viewports, every demo
 ```
 
 Nothing needs to be installed on the host. After changing dependencies, recreate the dev container so its
@@ -34,6 +35,7 @@ src/
   pages/             routes
   lib/               Zod schemas, fixture loaders, formatting, reduced-motion hook
 docker/nginx.conf    preview server config
+e2e/                 Playwright smoke test (runs in its own container against the preview)
 ```
 
 Fixtures are parsed with Zod at import time, so a malformed fixture fails the build rather than the page.

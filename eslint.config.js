@@ -28,4 +28,9 @@ export default defineConfig(
     files: ['**/*.test.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // page.evaluate callbacks run in the browser
+    files: ['e2e/**/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 );

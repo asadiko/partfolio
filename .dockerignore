@@ -6,3 +6,4 @@ dist
 docs
 *.log
 .DS_Store
+e2e
