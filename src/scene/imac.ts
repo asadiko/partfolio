@@ -20,7 +20,7 @@ import {
 import type { Texture } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-import { bondiBlue, bondiBlueLite, icePlastic, matte } from './materials';
+import { deepGreen, deepGreenLite, magnesium, matte } from './materials';
 
 export interface ImacModel {
   group: Group;
@@ -68,7 +68,7 @@ function shell(): Mesh {
     [0.055, 0.345],
     [0.0, 0.355],
   ].map(([r, t]) => new Vector2(r, t));
-  const mesh = shadowed(new Mesh(new LatheGeometry(profile, 64), bondiBlue()));
+  const mesh = shadowed(new Mesh(new LatheGeometry(profile, 64), deepGreen()));
   mesh.rotation.x = -Math.PI / 2;
   mesh.scale.set(1, 0.94, 1);
   return mesh;
@@ -102,17 +102,17 @@ function speakerGrille(): InstancedMesh {
 function keyboard(): Group {
   const g = new Group();
   const tray = shadowed(
-    new Mesh(new RoundedBoxGeometry(0.37, 0.018, 0.145, 4, 0.008), bondiBlue()),
+    new Mesh(new RoundedBoxGeometry(0.37, 0.018, 0.145, 4, 0.008), deepGreen()),
   );
   tray.position.y = 0.009;
   g.add(tray);
-  const inner = new Mesh(new BoxGeometry(0.345, 0.004, 0.115), icePlastic());
+  const inner = new Mesh(new BoxGeometry(0.345, 0.004, 0.115), matte(0x2a2d2b, 0.7));
   inner.position.set(0, 0.018, 0.002);
   g.add(inner);
   const cols = 15;
   const rows = 4;
   const keyGeo = new RoundedBoxGeometry(0.0175, 0.007, 0.0175, 2, 0.002);
-  const keys = new InstancedMesh(keyGeo, icePlastic(), cols * rows + 1);
+  const keys = new InstancedMesh(keyGeo, magnesium(), cols * rows + 1);
   const m = new Matrix4();
   let i = 0;
   for (let r = 0; r < rows; r++) {
@@ -132,16 +132,16 @@ function puckMouse(): Group {
   const g = new Group();
   // The G3 puck: a flattened translucent dome with a clear button insert on top.
   const dome = shadowed(
-    new Mesh(new SphereGeometry(0.036, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), bondiBlueLite()),
+    new Mesh(new SphereGeometry(0.036, 40, 20, 0, Math.PI * 2, 0, Math.PI / 2), deepGreenLite()),
   );
   dome.scale.set(1, 0.6, 1.05);
   g.add(dome);
-  const skirt = new Mesh(new CylinderGeometry(0.036, 0.034, 0.006, 40), bondiBlueLite());
+  const skirt = new Mesh(new CylinderGeometry(0.036, 0.034, 0.006, 40), deepGreenLite());
   skirt.position.y = 0.003;
   g.add(skirt);
   const button = new Mesh(
     new SphereGeometry(0.02, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),
-    icePlastic(),
+    magnesium(),
   );
   button.scale.set(1, 0.55, 1.25);
   button.position.set(0, 0.014, 0.004);
@@ -151,7 +151,10 @@ function puckMouse(): Group {
 
 /** A thin cable lying on the desk between two points, with a little slack. */
 function cable(points: Vector3[]): Mesh {
-  return new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 48, 0.0022, 6), icePlastic());
+  return new Mesh(
+    new TubeGeometry(new CatmullRomCurve3(points), 48, 0.0022, 6),
+    matte(0x2a2d2b, 0.6),
+  );
 }
 
 export function buildImac(screenTexture: Texture): ImacModel {
@@ -167,9 +170,7 @@ export function buildImac(screenTexture: Texture): ImacModel {
   funnel.position.set(0, 0.225, BEZEL_FRONT - 0.2);
   group.add(funnel);
 
-  const bezel = shadowed(
-    new Mesh(new RoundedBoxGeometry(0.385, 0.36, 0.1, 8, 0.055), icePlastic()),
-  );
+  const bezel = shadowed(new Mesh(new RoundedBoxGeometry(0.385, 0.36, 0.1, 8, 0.055), magnesium()));
   bezel.position.set(0, 0.215, BEZEL_FRONT - 0.05);
   group.add(bezel);
 
@@ -212,20 +213,20 @@ export function buildImac(screenTexture: Texture): ImacModel {
   const slot = new Mesh(new RoundedBoxGeometry(0.13, 0.008, 0.006, 2, 0.003), matte(0x2b2d2f, 0.7));
   slot.position.set(0, chinY + 0.018, BEZEL_FRONT + 0.001);
   group.add(slot);
-  const mark = new Mesh(new CylinderGeometry(0.007, 0.007, 0.002, 4), matte(0x1c8f9f, 0.4));
+  const mark = new Mesh(new CylinderGeometry(0.007, 0.007, 0.002, 4), matte(0x6fae8f, 0.4));
   mark.rotation.set(Math.PI / 2, 0, Math.PI / 4);
   mark.position.set(0, chinY - 0.012, BEZEL_FRONT + 0.002);
   group.add(mark);
 
-  const handle = shadowed(new Mesh(new TorusGeometry(0.06, 0.009, 12, 32, Math.PI), bondiBlue()));
+  const handle = shadowed(new Mesh(new TorusGeometry(0.06, 0.009, 12, 32, Math.PI), deepGreen()));
   handle.position.set(0, 0.4, -0.05);
   handle.rotation.y = Math.PI / 2;
   group.add(handle);
 
-  const foot = shadowed(new Mesh(new CylinderGeometry(0.1, 0.125, 0.03, 48), bondiBlueLite()));
+  const foot = shadowed(new Mesh(new CylinderGeometry(0.1, 0.125, 0.03, 48), deepGreenLite()));
   foot.position.set(0, 0.015, 0.02);
   group.add(foot);
-  const footPad = new Mesh(new CylinderGeometry(0.125, 0.13, 0.006, 48), icePlastic());
+  const footPad = new Mesh(new CylinderGeometry(0.125, 0.13, 0.006, 48), magnesium());
   footPad.position.set(0, 0.003, 0.02);
   group.add(footPad);
 

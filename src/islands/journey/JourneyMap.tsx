@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
 import { cx } from '@/lib/cx';
 import { usePrefersReducedMotion } from '@/lib/motion';
-import type { Globe, GlobeTheme } from '@/scene/globe';
+import type { Globe, GlobeTheme, LabelPosition } from '@/scene/globe';
 
 import { cities, hubOf, route } from './cities';
-import type { Milestone, MilestoneKind } from './types';
+import type { City, Milestone, MilestoneKind } from './types';
 
 const kindLabel: Record<MilestoneKind, string> = {
   school: 'School',
@@ -31,11 +31,45 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
   const listRef = useRef<HTMLOListElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const globeRef = useRef<Globe | null>(null);
+  const labelRefs = useRef(new Map<string, HTMLSpanElement>());
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const pinnedRef = useRef<string | null>(null);
+  const lastLabelsRef = useRef<LabelPosition[]>([]);
   const active = milestones[index];
   const activeCity = active?.city ?? 'tashkent';
   const reachedIndex = route.indexOf(hubOf[activeCity]);
   const focusRef = useRef({ activeCity, reachedIndex });
   focusRef.current = { activeCity, reachedIndex };
+
+  // Labels are positioned imperatively every frame; re-rendering React 60× a second would be wasteful.
+  const nearest = (labels: LabelPosition[], point: { x: number; y: number } | null) =>
+    point
+      ? labels.find((l) => l.visible && Math.hypot(l.x - point.x, l.y - point.y) < 22)?.id
+      : undefined;
+
+  const placeLabels = useCallback((labels: LabelPosition[]) => {
+    lastLabelsRef.current = labels;
+    const near = nearest(labels, pointerRef.current);
+    for (const { id, x, y, visible } of labels) {
+      const el = labelRefs.current.get(id);
+      if (!el) continue;
+      const shown =
+        visible && (id === focusRef.current.activeCity || id === near || id === pinnedRef.current);
+      // Major cities label above the dot, minor ones below, so Riga and Helsinki don't collide.
+      const offset = cities[id as City]?.major ? 'calc(-100% - 10px)' : '10px';
+      el.style.transform = `translate(-50%, ${offset}) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      el.style.opacity = shown ? '1' : '0';
+    }
+  }, []);
+
+  const trackPointer = (e: {
+    clientX: number;
+    clientY: number;
+    currentTarget: HTMLCanvasElement;
+  }) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    pointerRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,6 +94,7 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
           lon: c.lon,
           major: c.major,
         })),
+        onProject: placeLabels,
       });
       globeRef.current = globe;
       globe.focus(focusRef.current.activeCity, focusRef.current.reachedIndex);
@@ -75,7 +110,7 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
       globe?.dispose();
       globeRef.current = null;
     };
-  }, [reduced]);
+  }, [reduced, placeLabels]);
 
   useEffect(() => {
     globeRef.current?.focus(activeCity, reachedIndex);
@@ -102,8 +137,37 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
           <canvas
             ref={canvasRef}
             className="h-full w-full touch-none"
-            aria-label={`Globe showing the route Tashkent → Riga → Munich, focused on ${cities[activeCity].label}. Drag to rotate.`}
+            aria-label={`Globe showing the route Tashkent → Riga → Munich, focused on ${cities[activeCity].label}. Drag to rotate; tap a marker for its name.`}
+            onPointerMove={trackPointer}
+            onPointerDown={(e) => {
+              trackPointer(e);
+              // A press pins the marker under the finger (touch has no hover) until the next press.
+              pinnedRef.current = nearest(lastLabelsRef.current, pointerRef.current) ?? null;
+            }}
+            onPointerLeave={() => (pointerRef.current = null)}
           />
+          {webgl &&
+            Object.entries(cities).map(([id, c]) => (
+              <span
+                key={id}
+                ref={(el) => {
+                  if (el) labelRefs.current.set(id, el);
+                  else labelRefs.current.delete(id);
+                }}
+                aria-hidden="true"
+                className={cx(
+                  'pointer-events-none absolute top-0 left-0 rounded-md border px-2 py-0.5 text-xs whitespace-nowrap opacity-0 shadow-sm transition-opacity',
+                  id === activeCity
+                    ? 'border-accent bg-accent text-accent-ink font-medium'
+                    : 'border-line bg-surface/90 text-ink',
+                )}
+              >
+                {c.label}
+                <span className={id === activeCity ? 'text-accent-ink/80' : 'text-muted'}>
+                  , {c.country}
+                </span>
+              </span>
+            ))}
           {!webgl && (
             <p className="text-muted absolute inset-0 grid place-items-center text-sm">
               Globe needs WebGL; the milestones on the right still work.

@@ -1,36 +1,32 @@
 import { MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
 
-export const bondiBlue = () =>
+// Colourway after the BMW M5 CS: Frozen Deep Green Metallic body, magnesium-grey trim.
+
+/** Satin metallic deep green: a frozen (matte-clearcoat) paint with a light flake sheen. */
+export const deepGreen = () =>
   new MeshPhysicalMaterial({
-    color: 0x2aa3c8,
-    roughness: 0.16,
-    metalness: 0,
-    transmission: 0.42,
-    thickness: 0.25,
-    ior: 1.45,
-    clearcoat: 1,
-    clearcoatRoughness: 0.12,
-    attenuationColor: 0x1b8fb4,
-    attenuationDistance: 0.6,
+    color: 0x0f3b2c,
+    metalness: 0.55,
+    roughness: 0.38,
+    clearcoat: 0.7,
+    clearcoatRoughness: 0.55,
+    sheen: 0.25,
+    sheenColor: 0x6fae8f,
+    sheenRoughness: 0.6,
   });
 
-/** Same plastic without the transmission pass — for small parts where refraction is invisible anyway. */
-export const bondiBlueLite = () =>
-  new MeshPhysicalMaterial({
-    color: 0x2aa3c8,
-    roughness: 0.18,
-    clearcoat: 1,
-    clearcoatRoughness: 0.12,
-    transparent: true,
-    opacity: 0.92,
-  });
+/** Same paint, cheaper — no clearcoat/sheen passes, for the many small parts. */
+export const deepGreenLite = () =>
+  new MeshStandardMaterial({ color: 0x0f3b2c, metalness: 0.55, roughness: 0.4 });
 
-export const icePlastic = () =>
+/** Magnesium: warm mid-grey metal with a soft, slightly brushed finish. */
+export const magnesium = () =>
   new MeshPhysicalMaterial({
-    color: 0xe6e8e4,
-    roughness: 0.35,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.3,
+    color: 0x8f9296,
+    metalness: 0.75,
+    roughness: 0.42,
+    clearcoat: 0.2,
+    clearcoatRoughness: 0.6,
   });
 
 export const matte = (color: number, roughness = 0.8) =>

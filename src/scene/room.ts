@@ -79,7 +79,7 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
   const office = buildOffice(options.theme);
   scene.add(office.group);
 
-  const glow = new PointLight(0x9fd8ff, 0.4, 1, 2);
+  const glow = new PointLight(0xbfe9d8, 0.4, 1, 2);
   glow.position.copy(imac.screenCenter).add(new Vector3(0, 0, 0.1));
   scene.add(glow);
 

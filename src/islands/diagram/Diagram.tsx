@@ -171,7 +171,7 @@ export function Diagram({
                 x={node.x + node.w / 2}
                 y={node.y + node.h / 2 + (node.sublabel ? -4 : 5)}
                 textAnchor="middle"
-                className="fill-ink pointer-events-none text-[15px] font-medium"
+                className="fill-ink pointer-events-none text-[16px] font-medium"
               >
                 {node.label}
               </text>
@@ -180,7 +180,7 @@ export function Diagram({
                   x={node.x + node.w / 2}
                   y={node.y + node.h / 2 + 14}
                   textAnchor="middle"
-                  className="fill-muted pointer-events-none font-mono text-[11px]"
+                  className="fill-muted pointer-events-none font-mono text-[11.5px]"
                 >
                   {node.sublabel}
                 </text>
@@ -189,7 +189,7 @@ export function Diagram({
                 <text
                   x={node.x + 8}
                   y={node.y + 11}
-                  className="fill-faint pointer-events-none font-mono text-[8px] tracking-wider uppercase"
+                  className="fill-faint pointer-events-none font-mono text-[9px] tracking-wider uppercase"
                 >
                   {node.kind}
                 </text>
@@ -199,7 +199,7 @@ export function Diagram({
                   x={node.x + node.w - 8}
                   y={node.y + 11}
                   textAnchor="end"
-                  className="fill-accent pointer-events-none font-mono text-[9px] font-semibold tabular-nums"
+                  className="fill-accent pointer-events-none font-mono text-[10px] font-semibold tabular-nums"
                 >
                   {badges[node.id]}
                 </text>

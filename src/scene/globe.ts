@@ -33,12 +33,23 @@ export interface GlobeCity {
   major: boolean;
 }
 
+export interface LabelPosition {
+  id: string;
+  /** Canvas-relative pixel position of the marker. */
+  x: number;
+  y: number;
+  /** False when the marker is on the far side of the globe. */
+  visible: boolean;
+}
+
 export interface GlobeOptions {
   theme: GlobeTheme;
   cities: GlobeCity[];
   /** Ordered city ids forming the main route. */
   route: string[];
   reducedMotion: boolean;
+  /** Called every frame with where each city marker is on screen, for DOM labels. */
+  onProject?: (labels: LabelPosition[]) => void;
 }
 
 export interface Globe {
@@ -228,7 +239,21 @@ export function createGlobe(canvas: HTMLCanvasElement, options: GlobeOptions): G
     const s = 1 + Math.sin(clock * 3) * 0.25;
     pulse.scale.setScalar(options.reducedMotion ? 1 : s);
     renderer.render(scene, camera);
+    options.onProject?.(project());
   };
+
+  const world = new Vector3();
+  const toCamera = new Vector3();
+  function project(): LabelPosition[] {
+    const { clientWidth: w, clientHeight: h } = canvas;
+    return [...markers].map(([id, marker]) => {
+      marker.getWorldPosition(world);
+      toCamera.copy(camera.position).sub(world);
+      const visible = world.clone().normalize().dot(toCamera.normalize()) > 0.12;
+      const ndc = world.clone().project(camera);
+      return { id, x: ((ndc.x + 1) / 2) * w, y: ((1 - ndc.y) / 2) * h, visible };
+    });
+  }
 
   const onDown = (e: PointerEvent) => {
     dragging = { x: e.clientX, y: e.clientY, rx: rotation.x, ry: rotation.y };

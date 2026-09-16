@@ -10,6 +10,7 @@ import type { CallRule, DiagramSpec, PipelineNode } from '@/lib/schemas';
 import type { NodeStatus } from '../diagram/Diagram';
 import { Diagram } from '../diagram/Diagram';
 import { SimBadge } from '../shared/SimBadge';
+import { ZoomPane } from '../shared/ZoomPane';
 import { Button, Definition, Panel, Segmented } from '../shared/ui';
 import { useAnimatedNumber } from '../shared/useAnimatedNumber';
 import { useTicker } from '../shared/useTicker';
@@ -101,12 +102,12 @@ export function PipelineExplorer() {
   const badges = useMemo(
     () =>
       Object.fromEntries(
-        current.stages.map((s) => [
-          s.id,
-          s.calls === 0 ? '0 calls' : `${formatInt(s.calls)} calls`,
-        ]),
+        current.stages.map((s, i) => {
+          const model = nodes[i]?.[design].model;
+          return [s.id, !model || model === 'none' ? 'no LLM' : `${formatInt(s.calls)} × ${model}`];
+        }),
       ),
-    [current],
+    [current, nodes, design],
   );
 
   const selected = nodes.find((n) => n.id === selectedId);
@@ -145,18 +146,18 @@ export function PipelineExplorer() {
         instant={reduced}
       />
 
-      <div className="border-line bg-surface overflow-x-auto rounded-lg border p-3 sm:p-4">
-        <div className="min-w-[760px]">
+      <div className="pt-2">
+        <ZoomPane label="Pipeline graph · drag to pan · ⌘/Ctrl + wheel to zoom" minWidth={1100}>
           <Diagram
             spec={spec}
-            title="Document pipeline as a directed graph, from ingest to streamed result"
+            title="Document pipeline as a directed graph, from admission to streamed result"
             status={status}
             badges={badges}
             activeEdges={activeEdges}
             selected={selectedId}
             onSelect={setSelectedId}
           />
-        </div>
+        </ZoomPane>
       </div>
 
       {selected ? (
