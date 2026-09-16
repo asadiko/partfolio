@@ -1,0 +1,17 @@
+---
+import { site } from '@/site';
+---
+
+<footer class="border-line mt-24 border-t">
+  <div
+    class="text-muted mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6"
+  >
+    <p>{site.name} · {site.location}</p>
+    <p class="flex gap-4">
+      <a class="hover:text-ink" href={`mailto:${site.email}`}>Email</a>
+      <a class="hover:text-ink" href={site.github} rel="me noopener">GitHub</a>
+      <a class="hover:text-ink" href={site.linkedin} rel="me noopener">LinkedIn</a>
+    </p>
+    <p class="text-faint">Static site. No tracking, no cookies, no backend.</p>
+  </div>
+</footer>

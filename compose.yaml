@@ -1,0 +1,34 @@
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "4321:4321"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      ASTRO_TELEMETRY_DISABLED: "1"
+      CHOKIDAR_USEPOLLING: "1"
+
+  test:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      ASTRO_TELEMETRY_DISABLED: "1"
+    command: npm run verify
+
+  preview:
+    build:
+      context: .
+      target: preview
+    ports:
+      - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
