@@ -1,34 +1,33 @@
 import {
   ACESFilmicToneMapping,
-  BoxGeometry,
   Color,
-  CylinderGeometry,
-  DirectionalLight,
-  HemisphereLight,
   MathUtils,
   Mesh,
-  MeshStandardMaterial,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PerspectiveCamera,
-  PlaneGeometry,
+  PMREMGenerator,
   PointLight,
   Raycaster,
   Scene,
-  TorusGeometry,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { buildImac } from './imac';
+import { buildOffice } from './office';
+import type { Theme } from './office';
 import { Screen } from './screen';
 import { Tweens } from './tween';
 
-export type Theme = 'light' | 'dark';
+export type { Theme };
 
 export interface RoomOptions {
   theme: Theme;
   onScreenClick: () => void;
+  /** Called once the first frame is on screen — the moment to fade the canvas in. */
+  onReady?: () => void;
 }
 
 export interface Room {
@@ -41,12 +40,11 @@ export interface Room {
   dispose(): void;
 }
 
-const FOV = 34;
-const MAX_DPR = 1.5;
-const palette: Record<Theme, { wall: number; desk: number; hemi: number; exposure: number }> = {
-  light: { wall: 0xe7e2d9, desk: 0x9b7b5b, hemi: 0.75, exposure: 1.05 },
-  dark: { wall: 0x1a1b1e, desk: 0x5a4636, hemi: 0.35, exposure: 0.85 },
-};
+const FOV = 36;
+const MAX_DPR = 1.75;
+const OVERVIEW = new Vector3(1.0, 0.66, 1.72);
+const OVERVIEW_TARGET = new Vector3(-0.05, 0.27, 0.02);
+const background: Record<Theme, number> = { light: 0xd9d3c8, dark: 0x15171a };
 
 export function isWebGLAvailable(): boolean {
   try {
@@ -61,72 +59,33 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
   const renderer = new WebGLRenderer({
     canvas,
     antialias: true,
-    alpha: false,
     powerPreference: 'high-performance',
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_DPR));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = PCFSoftShadowMap;
+  renderer.shadowMap.type = PCFShadowMap;
   renderer.toneMapping = ACESFilmicToneMapping;
 
   const scene = new Scene();
-  const camera = new PerspectiveCamera(FOV, 1, 0.05, 20);
+  const pmrem = new PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+
+  const camera = new PerspectiveCamera(FOV, 1, 0.05, 30);
   const tweens = new Tweens();
   const screen = new Screen();
   const imac = buildImac(screen.texture);
   scene.add(imac.group);
+  const office = buildOffice(options.theme);
+  scene.add(office.group);
 
-  const wallMaterial = new MeshStandardMaterial({ roughness: 1 });
-  const wall = new Mesh(new PlaneGeometry(8, 4), wallMaterial);
-  wall.position.set(0, 1.5, -0.75);
-  wall.receiveShadow = true;
-  scene.add(wall);
-
-  const deskMaterial = new MeshStandardMaterial({ roughness: 0.85 });
-  const desk = new Mesh(new BoxGeometry(3, 0.04, 1.4), deskMaterial);
-  desk.position.set(0, -0.02, 0.1);
-  desk.receiveShadow = true;
-  scene.add(desk);
-
-  const mug = new Mesh(
-    new CylinderGeometry(0.038, 0.034, 0.09, 32),
-    new MeshStandardMaterial({ color: 0xf1ede4, roughness: 0.5 }),
-  );
-  mug.position.set(-0.44, 0.045, -0.04);
-  mug.castShadow = true;
-  scene.add(mug);
-  const mugHandle = new Mesh(new TorusGeometry(0.022, 0.006, 8, 20, Math.PI), mug.material);
-  mugHandle.position.set(-0.48, 0.045, -0.04);
-  mugHandle.rotation.set(0, 0, Math.PI / 2);
-  scene.add(mugHandle);
-
-  const hemi = new HemisphereLight(0xffffff, 0x6b5a48, 1);
-  scene.add(hemi);
-  const key = new DirectionalLight(0xfff4e6, 2.4);
-  key.position.set(1.4, 2.2, 1.6);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.camera.near = 0.5;
-  key.shadow.camera.far = 6;
-  key.shadow.camera.left = key.shadow.camera.bottom = -1;
-  key.shadow.camera.right = key.shadow.camera.top = 1;
-  key.shadow.bias = -0.0005;
-  scene.add(key);
-  const rim = new DirectionalLight(0xbfe3ff, 0.8);
-  rim.position.set(-1.5, 1.2, -1);
-  scene.add(rim);
-  const glow = new PointLight(0x9fd8ff, 0.5, 1.2, 2);
-  glow.position.copy(imac.screenCenter).add(new Vector3(0, 0, 0.12));
+  const glow = new PointLight(0x9fd8ff, 0.4, 1, 2);
+  glow.position.copy(imac.screenCenter).add(new Vector3(0, 0, 0.1));
   scene.add(glow);
 
-  const OVERVIEW = new Vector3(0.8, 0.56, 1.3);
-  const overview = { position: OVERVIEW.clone(), target: new Vector3(0, 0.17, 0.08) };
+  const overview = { position: OVERVIEW.clone(), target: OVERVIEW_TARGET.clone() };
   const framing = { position: new Vector3(), target: imac.screenCenter.clone() };
-  const camState = {
-    position: overview.position.clone(),
-    target: overview.target.clone(),
-    focus: 0,
-  };
+  const camState = { focus: 0 };
   const pointer = new Vector2();
   const raycaster = new Raycaster();
   let hovering = false;
@@ -134,14 +93,13 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
   let frame = 0;
   let last = performance.now();
   let clock = 0;
+  let rendered = false;
 
   function applyTheme(theme: Theme) {
-    const p = palette[theme];
-    wallMaterial.color = new Color(p.wall);
-    deskMaterial.color = new Color(p.desk);
-    hemi.intensity = p.hemi;
-    renderer.toneMappingExposure = p.exposure;
-    scene.background = new Color(p.wall);
+    office.setTheme(theme);
+    scene.background = new Color(background[theme]);
+    scene.environmentIntensity = theme === 'dark' ? 0.35 : 0.9;
+    renderer.toneMappingExposure = theme === 'dark' ? 0.9 : 1.0;
   }
 
   function resize() {
@@ -149,8 +107,8 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
     if (w === 0 || h === 0) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    // Portrait screens need to stand further back to keep the whole iMac in frame.
-    const back = camera.aspect < 1 ? 1.45 : camera.aspect < 1.4 ? 1.15 : 1;
+    // Portrait screens stand further back to keep the whole desk in frame.
+    const back = camera.aspect < 1 ? 1.5 : camera.aspect < 1.4 ? 1.15 : 1;
     overview.position.copy(OVERVIEW).multiplyScalar(back);
     const halfFov = MathUtils.degToRad(FOV / 2);
     const distance = Math.max(
@@ -164,23 +122,26 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
   function render(now: number) {
     if (paused) return;
     frame = requestAnimationFrame(render);
-    const dt = Math.min(0.05, (now - last) / 1000);
+    // Clamp generously: slow devices still get time-accurate tweens rather than slow-motion ones.
+    const dt = Math.min(0.25, (now - last) / 1000);
     last = now;
     clock += dt;
     tweens.step(dt);
     screen.tick(dt);
 
     const drift = 1 - camState.focus;
-    const orbit = Math.sin(clock * 0.22) * 0.05 * drift;
-    const parallaxX = pointer.x * 0.05 * drift;
-    const parallaxY = pointer.y * 0.03 * drift;
     const position = new Vector3().lerpVectors(overview.position, framing.position, camState.focus);
     const target = new Vector3().lerpVectors(overview.target, framing.target, camState.focus);
-    position.x += orbit + parallaxX;
-    position.y += parallaxY;
+    position.x += (Math.sin(clock * 0.2) * 0.04 + pointer.x * 0.06) * drift;
+    position.y += (Math.cos(clock * 0.17) * 0.015 + pointer.y * 0.03) * drift;
     camera.position.copy(position);
     camera.lookAt(target);
+    glow.intensity = 0.3 + (hovering ? 0.5 : 0) + Math.sin(clock * 2) * 0.05;
     renderer.render(scene, camera);
+    if (!rendered) {
+      rendered = true;
+      options.onReady?.();
+    }
   }
 
   function updateHover(event: PointerEvent) {
@@ -214,8 +175,10 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
   resize();
   frame = requestAnimationFrame(render);
 
-  const animateFocus = (to: number) =>
-    tweens.run(1.3, (t) => (camState.focus = MathUtils.lerp(camState.focus, to, t)));
+  const animateFocus = (to: number) => {
+    const from = camState.focus;
+    return tweens.run(1.4, (t) => (camState.focus = MathUtils.lerp(from, to, t)));
+  };
 
   return {
     screen,
@@ -242,10 +205,10 @@ export function createRoom(canvas: HTMLCanvasElement, options: RoomOptions): Roo
       scene.traverse((obj) => {
         if (obj instanceof Mesh) {
           obj.geometry.dispose();
-          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          mats.forEach((m) => m.dispose());
+          (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach((m) => m.dispose());
         }
       });
+      scene.environment?.dispose();
       screen.texture.dispose();
       renderer.dispose();
     },

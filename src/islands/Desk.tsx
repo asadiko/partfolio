@@ -65,10 +65,15 @@ export function Desk({ data }: { data: DesktopData }) {
         setPhase('desktop');
         return;
       }
-      room = createRoom(canvas, { theme: currentTheme(), onScreenClick: () => void boot() });
+      room = createRoom(canvas, {
+        theme: currentTheme(),
+        onScreenClick: () => void boot(),
+        onReady: () => {
+          setReady(true);
+          setPhase('room');
+        },
+      });
       roomRef.current = room;
-      setReady(true);
-      setPhase('room');
     })();
     const themeObserver = new MutationObserver(() => room?.setTheme(currentTheme()));
     themeObserver.observe(document.documentElement, {
@@ -116,9 +121,7 @@ export function Desk({ data }: { data: DesktopData }) {
             <Button variant="primary" onClick={() => void boot()} disabled={phase !== 'room'}>
               {phase === 'room' ? 'Turn on' : 'Loading…'}
             </Button>
-            <a href="/work" className="text-muted text-sm underline underline-offset-4">
-              Skip the 3D — text version
-            </a>
+            <span className="text-faint font-mono text-xs">click the screen · or press Enter</span>
           </div>
         </>
       )}

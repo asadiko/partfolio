@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PipelineFixture, PipelineStage } from '@/lib/schemas';
+import type { PipelineFixture, PipelineNode } from '@/lib/schemas';
 
 import { simulatePipeline, unitCount } from './pipeline';
 
@@ -22,24 +22,40 @@ const costModel: PipelineFixture['costModel'] = {
   },
 };
 
-const stage = (overrides: Partial<PipelineStage> & Pick<PipelineStage, 'id'>): PipelineStage => ({
-  name: overrides.id,
-  summary: '',
-  why: '',
-  guards: '',
-  naive: { per: 'requirement', model: 'strong', calls: 1, concurrency: 1, fixedLatencyMs: 0 },
-  batched: {
-    per: 'requirement',
-    model: 'strong',
-    calls: 1,
-    batch: 10,
-    concurrency: 1,
-    fixedLatencyMs: 0,
-  },
+const rule = (overrides: Partial<PipelineNode['naive']> = {}): PipelineNode['naive'] => ({
+  per: 'requirement',
+  model: 'strong',
+  calls: 1,
+  concurrency: 1,
+  fraction: 1,
+  fixedLatencyMs: 0,
   ...overrides,
 });
 
-const fixture = (stages: PipelineStage[]): PipelineFixture => ({ document, costModel, stages });
+const stage = (overrides: Partial<PipelineNode> & Pick<PipelineNode, 'id'>): PipelineNode => ({
+  label: overrides.id,
+  sublabel: '',
+  kind: 'llm',
+  x: 0,
+  y: 0,
+  w: 100,
+  h: 50,
+  summary: '',
+  why: '',
+  guards: '',
+  naive: rule(),
+  batched: rule({ batch: 10 }),
+  ...overrides,
+});
+
+const fixture = (nodes: PipelineNode[]): PipelineFixture => ({
+  document,
+  costModel,
+  width: 1000,
+  height: 800,
+  nodes,
+  edges: [],
+});
 
 describe('unitCount', () => {
   it('maps every unit kind onto the document profile', () => {
@@ -67,10 +83,7 @@ describe('simulatePipeline', () => {
   });
 
   it('divides latency by concurrency in whole waves', () => {
-    const s = stage({
-      id: 'extract',
-      naive: { per: 'page', model: 'strong', calls: 1, concurrency: 4, fixedLatencyMs: 0 },
-    });
+    const s = stage({ id: 'extract', naive: rule({ per: 'page', concurrency: 4 }) });
     const result = simulatePipeline(fixture([s]), 'naive');
     expect(result.stages[0]?.latencyMs).toBe(3 * 1000);
   });
@@ -78,10 +91,15 @@ describe('simulatePipeline', () => {
   it('treats model "none" as zero calls with fixed latency', () => {
     const s = stage({
       id: 'scan',
-      batched: { per: 'document', model: 'none', calls: 1, concurrency: 1, fixedLatencyMs: 40 },
+      batched: rule({ per: 'document', model: 'none', fixedLatencyMs: 40 }),
     });
     const result = simulatePipeline(fixture([s]), 'batched');
     expect(result.stages[0]).toMatchObject({ calls: 0, costUnits: 0, latencyMs: 40 });
+  });
+
+  it('applies the touched fraction before batching', () => {
+    const s = stage({ id: 'guard', naive: rule({ per: 'page', fraction: 0.15 }) });
+    expect(simulatePipeline(fixture([s]), 'naive').stages[0]?.calls).toBe(2);
   });
 
   it('sums totals across stages', () => {

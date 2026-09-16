@@ -30,7 +30,8 @@ fixtures/            demo data — extend these to change what the demos show
 src/
   content/           MDX/Markdown — case studies, journey milestones, about, (empty) blog
   engines/           pure simulation logic with tests: pipeline cost model, grounding, scenarios
-  scene/             three.js room: iMac model, CRT canvas texture, tween scheduler, camera + input
+  scene/             three.js: office room (iMac model, props, lighting), CRT painter, globe, tween scheduler
+  assets/            land-110m.json — Natural Earth coastlines (public domain), painted onto the globe at runtime
   os/                AsadOS: window-manager reducer (tested), menu bar, windows, apps, terminal parser (tested)
   islands/           React islands (hydrated on visibility) + the shared SVG Diagram; Desk.tsx runs the home page
   components/        Astro components (no client JS)

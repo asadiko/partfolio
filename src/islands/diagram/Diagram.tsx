@@ -12,6 +12,8 @@ interface DiagramProps {
   spec: DiagramSpec;
   title: string;
   status?: Readonly<Record<string, NodeStatus>>;
+  /** Short text drawn in a node's corner, e.g. a call count. */
+  badges?: Readonly<Record<string, string>>;
   activeEdges?: ReadonlySet<string>;
   selected?: string | null;
   onSelect?: (id: string | null) => void;
@@ -39,6 +41,7 @@ export function Diagram({
   spec,
   title,
   status = {},
+  badges = {},
   activeEdges,
   selected,
   onSelect,
@@ -180,6 +183,25 @@ export function Diagram({
                   className="fill-muted pointer-events-none font-mono text-[11px]"
                 >
                   {node.sublabel}
+                </text>
+              )}
+              {node.kind && (
+                <text
+                  x={node.x + 8}
+                  y={node.y + 11}
+                  className="fill-faint pointer-events-none font-mono text-[8px] tracking-wider uppercase"
+                >
+                  {node.kind}
+                </text>
+              )}
+              {badges[node.id] && (
+                <text
+                  x={node.x + node.w - 8}
+                  y={node.y + 11}
+                  textAnchor="end"
+                  className="fill-accent pointer-events-none font-mono text-[9px] font-semibold tabular-nums"
+                >
+                  {badges[node.id]}
                 </text>
               )}
             </g>

@@ -11,6 +11,8 @@ export interface RoutedEdge {
 }
 
 const ADJACENT_GAP = 120;
+// Prefer top/bottom anchors once an edge is mostly vertical; keeps layered graphs from routing through neighbours.
+const VERTICAL_BIAS = 0.6;
 const PAIR_OFFSET = 9;
 const LOOP_DEPTH = 110;
 
@@ -49,7 +51,7 @@ export function routeEdge(edge: DiagramEdge, nodes: ReadonlyMap<string, DiagramN
   const dx = ct.x - cf.x;
   const dy = ct.y - cf.y;
 
-  if (Math.abs(dy) > Math.abs(dx)) {
+  if (Math.abs(dy) > Math.abs(dx) * VERTICAL_BIAS) {
     const down = dy > 0;
     return vertical(
       { x: cf.x, y: down ? from.y + from.h : from.y },

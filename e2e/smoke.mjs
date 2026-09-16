@@ -61,8 +61,8 @@ await page.getByRole('radio', { name: /Batched/ }).click();
 await page.waitForTimeout(1000);
 if ((await page.getByText(/less than naive/).count()) === 0)
   fail('pipeline: batched deltas missing');
-await page.getByRole('button', { name: /Enrich requirements/ }).click();
-if ((await page.getByRole('heading', { name: 'Enrich requirements' }).count()) === 0)
+await page.getByRole('button', { name: /Citation check/ }).click();
+if ((await page.getByRole('heading', { name: 'Citation check + retry' }).count()) === 0)
   fail('pipeline: stage panel missing');
 
 await page.goto(`${base}/work/grounded-answers`, { waitUntil: 'networkidle' });
@@ -104,13 +104,14 @@ if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== 'dar
 
 // AsadOS: room → boot → desktop → apps → terminal → shutdown
 await page.goto(`${base}/`, { waitUntil: 'networkidle' });
-await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 15000 });
+// Software WebGL in headless Chromium compiles the scene slowly; real GPUs take well under a second.
+await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 60000 });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${shots}/os-room.png` });
 await page.getByRole('button', { name: 'Turn on' }).click();
 await page.waitForTimeout(2200);
 await page.screenshot({ path: `${shots}/os-boot.png` });
-await page.getByRole('dialog', { name: 'Read Me' }).waitFor({ timeout: 10000 });
+await page.getByRole('dialog', { name: 'Read Me' }).waitFor({ timeout: 30000 });
 await page.getByRole('button', { name: 'Open Pipeline Explorer' }).click();
 await page.getByRole('dialog', { name: 'Pipeline Explorer' }).waitFor();
 await page.getByRole('tab', { name: 'Read me' }).click();
@@ -124,7 +125,7 @@ await page.getByRole('dialog', { name: 'Grounding' }).waitFor();
 await page.screenshot({ path: `${shots}/os-desktop.png` });
 await page.getByRole('menuitem', { name: 'Special' }).dispatchEvent('pointerdown');
 await page.getByRole('menuitem', { name: 'Shut Down' }).click();
-await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 10000 });
+await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 30000 });
 await context.close();
 
 const reduced = await browser.newContext({ ...viewports.desktop, reducedMotion: 'reduce' });

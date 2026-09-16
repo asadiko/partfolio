@@ -83,7 +83,7 @@ export function Desktop({ data, onShutdown }: DesktopProps) {
   };
 
   return (
-    <div className="os desk__fade">
+    <div className="os theme-light desk__fade">
       <MenuBar
         activeTitle={state.active ? apps[state.active].title : null}
         onOpen={open}

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
-import { usePrefersReducedMotion } from '@/lib/motion';
-
-import { VIEW, cityPoints, hubOf, labelPosition, route, segmentPath } from './map';
-import type { City, Milestone, MilestoneKind } from './types';
 import { cx } from '@/lib/cx';
+import { usePrefersReducedMotion } from '@/lib/motion';
+import type { Globe, GlobeTheme } from '@/scene/globe';
+
+import { cities, hubOf, route } from './cities';
+import type { Milestone, MilestoneKind } from './types';
 
 const kindLabel: Record<MilestoneKind, string> = {
   school: 'School',
@@ -17,14 +18,68 @@ const kindLabel: Record<MilestoneKind, string> = {
   move: 'Move',
 };
 
+const currentTheme = (): GlobeTheme => {
+  const forced = document.documentElement.dataset.theme;
+  if (forced === 'dark' || forced === 'light') return forced;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
 export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
+  const [webgl, setWebgl] = useState(true);
   const listRef = useRef<HTMLOListElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const globeRef = useRef<Globe | null>(null);
   const active = milestones[index];
-  const activeCity: City = active?.city ?? 'tashkent';
-  const hub = hubOf[activeCity];
-  const reachedIndex = route.indexOf(hub);
+  const activeCity = active?.city ?? 'tashkent';
+  const reachedIndex = route.indexOf(hubOf[activeCity]);
+  const focusRef = useRef({ activeCity, reachedIndex });
+  focusRef.current = { activeCity, reachedIndex };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let disposed = false;
+    let globe: Globe | null = null;
+    (async () => {
+      const { createGlobe } = await import('@/scene/globe');
+      const { isWebGLAvailable } = await import('@/scene/room');
+      if (disposed) return;
+      if (!isWebGLAvailable()) {
+        setWebgl(false);
+        return;
+      }
+      globe = createGlobe(canvas, {
+        theme: currentTheme(),
+        reducedMotion: reduced,
+        route: [...route],
+        cities: Object.entries(cities).map(([id, c]) => ({
+          id,
+          lat: c.lat,
+          lon: c.lon,
+          major: c.major,
+        })),
+      });
+      globeRef.current = globe;
+      globe.focus(focusRef.current.activeCity, focusRef.current.reachedIndex);
+    })();
+    const observer = new MutationObserver(() => globe?.setTheme(currentTheme()));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      globe?.dispose();
+      globeRef.current = null;
+    };
+  }, [reduced]);
+
+  useEffect(() => {
+    globeRef.current?.focus(activeCity, reachedIndex);
+  }, [activeCity, reachedIndex]);
 
   useEffect(() => {
     const el = listRef.current?.querySelector<HTMLButtonElement>(`[data-index="${index}"]`);
@@ -43,84 +98,22 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
       <div className="border-line bg-surface rounded-lg border p-3 sm:p-4 lg:sticky lg:top-20 lg:self-start">
-        <svg
-          viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
-          role="img"
-          aria-label={`Route from Tashkent to Riga to Munich. Currently highlighting ${cityPoints[activeCity].label}.`}
-          className="h-auto w-full"
-        >
-          <g className="stroke-line" strokeWidth={1} strokeDasharray="2 6" fill="none">
-            {[100, 200, 300, 400].map((y) => (
-              <line key={y} x1={0} y1={y} x2={VIEW.width} y2={y} />
-            ))}
-            {[200, 400, 600, 800].map((x) => (
-              <line key={x} x1={x} y1={0} x2={x} y2={VIEW.height} />
-            ))}
-          </g>
-
-          {route.slice(0, -1).map((from, i) => {
-            const to = route[i + 1];
-            if (!to) return null;
-            const travelled = i < reachedIndex;
-            return (
-              <path
-                key={from}
-                d={segmentPath(from, to)}
-                fill="none"
-                strokeWidth={travelled ? 2.5 : 1.5}
-                strokeDasharray={travelled ? undefined : '6 6'}
-                className={`transition-[stroke] duration-500 ${travelled ? 'stroke-accent' : 'stroke-faint'}`}
-              />
-            );
-          })}
-
-          {(['helsinki', 'st-gallen'] as const).map((spoke) => {
-            const on = activeCity === spoke;
-            return (
-              <path
-                key={spoke}
-                d={segmentPath(hubOf[spoke], spoke)}
-                fill="none"
-                strokeWidth={1.5}
-                strokeDasharray="3 5"
-                className={`transition-[stroke] duration-500 ${on ? 'stroke-accent' : 'stroke-line'}`}
-              />
-            );
-          })}
-
-          {Object.entries(cityPoints).map(([id, p]) => {
-            const on = activeCity === id;
-            const visited = p.major ? route.indexOf(id as City) <= reachedIndex : on;
-            return (
-              <g key={id}>
-                {on && (
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={p.major ? 22 : 14}
-                    className="fill-accent/20 journey-pulse"
-                  />
-                )}
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={p.major ? 9 : 5}
-                  className={`transition-[fill] duration-500 ${visited || on ? 'fill-accent' : 'fill-faint'}`}
-                />
-                <text
-                  {...labelPosition(p)}
-                  className={`${p.major ? 'text-[22px] font-medium' : 'text-[16px]'} ${on ? 'fill-ink' : 'fill-muted'}`}
-                >
-                  {p.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+        <div className="relative aspect-square max-h-[540px] w-full">
+          <canvas
+            ref={canvasRef}
+            className="h-full w-full touch-none"
+            aria-label={`Globe showing the route Tashkent → Riga → Munich, focused on ${cities[activeCity].label}. Drag to rotate.`}
+          />
+          {!webgl && (
+            <p className="text-muted absolute inset-0 grid place-items-center text-sm">
+              Globe needs WebGL; the milestones on the right still work.
+            </p>
+          )}
+        </div>
         {active && (
           <p className="text-muted mt-2 text-sm" aria-live="polite">
             <span className="text-ink font-medium">{active.date}</span> ·{' '}
-            {cityPoints[active.city].label} · {kindLabel[active.kind]}
+            {cities[active.city].label} · {kindLabel[active.kind]}
           </p>
         )}
       </div>
@@ -145,14 +138,11 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
                 <span className="text-faint flex items-center gap-2 font-mono text-[11px]">
                   {m.date}
                   <span aria-hidden="true">·</span>
-                  {cityPoints[m.city].label}
+                  {cities[m.city].label}
                 </span>
                 <span className="text-ink mt-0.5 block text-sm font-medium">{m.title}</span>
                 <span
-                  className={cx(
-                    'text-muted mt-1 block text-sm leading-relaxed',
-                    on ? '' : 'hidden',
-                  )}
+                  className={cx('text-muted mt-1 block text-sm leading-relaxed', !on && 'hidden')}
                 >
                   {m.body}
                 </span>

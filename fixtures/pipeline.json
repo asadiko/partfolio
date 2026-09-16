@@ -1,9 +1,9 @@
 {
-  "$comment": "Illustrative cost model for the pipeline explorer. Numbers are a model of two designs, not production measurements. The document profile is a public IETF RFC; the pipeline is described at pattern level only.",
+  "$comment": "Illustrative cost model for the pipeline explorer. Numbers model two designs of the same DAG, not production measurements. The document profile is a public IETF RFC; stages are described at pattern level only.",
   "document": {
     "id": "rfc-9110-excerpt",
     "title": "RFC 9110 — HTTP Semantics (sections 8–15 profile)",
-    "note": "A public IETF standard stands in for an engineering specification: same shape — numbered normative clauses (MUST / SHOULD / MAY), cross-references to other standards, and pages that are pure table of contents or boilerplate.",
+    "note": "A public IETF standard stands in for an engineering specification: numbered normative clauses (MUST / SHOULD / MAY), cross-references to other standards, and pages that are pure table of contents or boilerplate.",
     "pages": 96,
     "requirements": 140,
     "standardsCodes": 38,
@@ -22,86 +22,204 @@
       }
     }
   },
-  "stages": [
+  "width": 1000,
+  "height": 780,
+  "nodes": [
     {
-      "id": "classify",
-      "name": "Classify document",
-      "summary": "One cheap call decides what kind of document arrived: a requirements spec, a standards list, a diagram, or a reference document. Everything downstream branches on that answer.",
-      "why": "A spec and a norms catalogue need opposite treatment. Guessing wrong wastes every later call, so the decision is made first, once, and cheaply.",
-      "guards": "Per-customer document conventions are looked up rather than inferred, so a recurring house format never gets re-guessed.",
+      "id": "ingest",
+      "label": "Ingest & convert",
+      "sublabel": "fetch · convert · render pages",
+      "kind": "io",
+      "x": 265,
+      "y": 20,
+      "w": 225,
+      "h": 60,
+      "summary": "Fetch the file from object storage and convert PDF, DOCX, XLSX or ReqIF to markdown through the ingestion service's streaming RPC. Pages are also rendered to images for the vision path.",
+      "why": "Every later stage reads one normalised representation, so format quirks are handled once, here, and never again downstream.",
+      "guards": "Conversion streams per-page progress so a 300-page file never looks stalled. A fuzzy word-anchoring pass repairs vision-model hallucinations inside compound words — German is unforgiving.",
       "naive": {
         "per": "document",
-        "model": "cheap",
-        "calls": 1
+        "model": "none",
+        "fixedLatencyMs": 2600
       },
       "batched": {
         "per": "document",
-        "model": "cheap",
-        "calls": 1
+        "model": "none",
+        "fixedLatencyMs": 2600
+      }
+    },
+    {
+      "id": "cache",
+      "label": "Content-hash cache",
+      "sublabel": "sha-256 → prior result",
+      "kind": "gate",
+      "x": 265,
+      "y": 104,
+      "w": 225,
+      "h": 60,
+      "summary": "Hash the file bytes and look up a previous run. A byte-identical re-upload returns the stored result and skips everything below.",
+      "why": "Reviewers re-upload the same document constantly — after a rename, after a merge, to 'refresh'. Paying the full pipeline for that was the single most wasteful thing the first version did.",
+      "guards": "Keyed on content, never on filename. A one-byte change is a new document.",
+      "naive": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 30
+      },
+      "batched": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 30
+      }
+    },
+    {
+      "id": "classify",
+      "label": "Classify document",
+      "sublabel": "cheap · 1 call per doc",
+      "kind": "llm",
+      "x": 265,
+      "y": 188,
+      "w": 225,
+      "h": 60,
+      "summary": "One cheap call decides what arrived: a requirements spec, a standards catalogue, a component diagram or a reference document. Everything below branches on that answer.",
+      "why": "A spec and a norms catalogue need opposite treatment. Guessing wrong wastes every later call, so the decision is made first, once, cheaply.",
+      "guards": "Per-customer document conventions are looked up as hints rather than re-inferred; the answer is a closed enum, so a creative model reply cannot route anywhere unexpected.",
+      "naive": {
+        "per": "document",
+        "model": "cheap"
+      },
+      "batched": {
+        "per": "document",
+        "model": "cheap"
       }
     },
     {
       "id": "triage",
-      "name": "Page triage",
-      "summary": "Decide which pages carry requirements at all. Tables of contents, title pages, approval sheets and blank pages are dropped before anything expensive runs.",
-      "why": "About a third of a typical document is not extractable. Skipping it is the cheapest optimisation in the whole pipeline.",
-      "guards": "The triage result also sets an expected requirement count per page, which the recall guard uses later to notice under-extraction.",
+      "label": "Page triage",
+      "sublabel": "cheap · skip empty pages",
+      "kind": "llm",
+      "x": 20,
+      "y": 272,
+      "w": 225,
+      "h": 60,
+      "summary": "Mark tables of contents, title, approval and blank pages as skippable, and estimate how many requirements each remaining page holds.",
+      "why": "Roughly a third of a typical document is not extractable. Skipping it is the cheapest optimisation in the pipeline. The per-page estimate is what makes the recall guard possible.",
+      "guards": "The naive design asked the model page by page; the batched design shows it the whole page list once, which is both cheaper and more consistent.",
       "naive": {
         "per": "page",
         "model": "cheap",
-        "calls": 1,
         "concurrency": 4
       },
       "batched": {
         "per": "document",
+        "model": "cheap"
+      }
+    },
+    {
+      "id": "summarize",
+      "label": "Summarise reference doc",
+      "sublabel": "alt branch · map-reduce",
+      "kind": "llm",
+      "x": 755,
+      "y": 272,
+      "w": 225,
+      "h": 60,
+      "summary": "Reference documents and norms catalogues are not extracted; they are summarised (one call for small files, map-reduce for large ones) so they can be attached to the project as context.",
+      "why": "Not every upload is a spec. This branch is why classification exists.",
+      "guards": "Branch not taken for this document — the counters show zero calls.",
+      "naive": {
+        "per": "document",
         "model": "cheap",
-        "calls": 1
+        "fraction": 0
+      },
+      "batched": {
+        "per": "document",
+        "model": "cheap",
+        "fraction": 0
       }
     },
     {
       "id": "extract",
-      "name": "Extract requirements",
-      "summary": "One strong call per extractable page, the page image as primary input and the markdown text as context. Pages run concurrently, not serially.",
-      "why": "Layout carries meaning in engineering documents — tables, indents, numbered clauses. Text-only extraction lost it; vision-first extraction keeps it.",
-      "guards": "Page metadata (drawing refs, page numbers) is fenced with explicit do-not-extract markers so it cannot become a ghost requirement. A recall guard retries any page whose yield is far below the triage estimate.",
+      "label": "Extract requirements",
+      "sublabel": "strong · vision · per page",
+      "kind": "llm",
+      "x": 20,
+      "y": 356,
+      "w": 225,
+      "h": 60,
+      "summary": "One strong call per extractable page: the page image is the primary input, the markdown the supplementary context. Output is a JSON list of requirements and standalone standards references.",
+      "why": "Layout carries meaning — tables, indents, numbered clauses. Text-only extraction lost it; vision-first extraction keeps it. Pages are independent, so they run concurrently.",
+      "guards": "Page metadata (drawing refs, page numbers) is fenced with explicit do-not-extract markers so it cannot become a ghost requirement. Dense norm-list pages get a primer hint with its own timeout.",
       "naive": {
         "per": "page",
         "model": "strong",
-        "calls": 1,
         "concurrency": 4
       },
       "batched": {
         "per": "page",
         "model": "strong",
-        "calls": 1,
         "concurrency": 16
       }
     },
     {
       "id": "standards",
-      "name": "Standards-code scan",
-      "summary": "Find every referenced standard (ISO 8601, RFC 5234, …), normalise the spelling, expand ranges, merge duplicates across pages. Deterministic code does the work; a cheap model call filters false positives at the end.",
-      "why": "The first version asked the model to list codes page by page. It missed some, invented others, and formatted the same code four ways. A prefix-agnostic scanner is exhaustive and deterministic; the model is only asked the one question it is good at — is this really a standard?",
-      "guards": "Canonicalisation and cross-page merge happen before the model sees anything, so it cannot re-introduce duplicates.",
+      "label": "Standards-code scan",
+      "sublabel": "scanner → cheap filter",
+      "kind": "code",
+      "x": 510,
+      "y": 356,
+      "w": 225,
+      "h": 60,
+      "summary": "A prefix-agnostic scanner finds every referenced standard (ISO 8601, RFC 5234, …), canonicalises spelling, expands ranges and merges duplicates across pages. A single cheap call filters false positives at the end.",
+      "why": "The first version asked the model to list codes page by page: it missed some, invented others and spelled the same code four ways. Deterministic code is exhaustive; the model is asked only the one question it is good at — is this really a standard?",
+      "guards": "Canonicalisation happens before the model sees anything, so it cannot re-introduce duplicates. Validated on a 71-page document with 212 codes.",
       "naive": {
         "per": "page",
         "model": "strong",
-        "calls": 1,
         "concurrency": 4
       },
       "batched": {
         "per": "document",
         "model": "cheap",
-        "calls": 1,
         "fixedLatencyMs": 120
       }
     },
     {
+      "id": "guard",
+      "label": "Recall guard + JSON repair",
+      "sublabel": "retry low-yield · repair JSON",
+      "kind": "gate",
+      "x": 20,
+      "y": 440,
+      "w": 225,
+      "h": 60,
+      "summary": "Compare each page's yield with the triage estimate; pages far below it are retried with a stronger model and an explicit hint. Truncated or malformed JSON is repaired (fences stripped, open structures closed) and only the missing items are re-requested.",
+      "why": "Silent under-extraction is the failure nobody notices until a reviewer does. A count-based guard catches it at pipeline time instead of review time.",
+      "guards": "Retries are bounded (one per page) and skip pages that were already primed, so the guard cannot double the cost of a document.",
+      "naive": {
+        "per": "page",
+        "model": "strong",
+        "fraction": 0.15,
+        "concurrency": 4
+      },
+      "batched": {
+        "per": "page",
+        "model": "strong",
+        "fraction": 0.15,
+        "concurrency": 8
+      }
+    },
+    {
       "id": "enrich",
-      "name": "Enrich requirements",
-      "summary": "Category, criticality, owning team and a first feasibility opinion for each requirement — all four fields from one batched call over ten to fifteen requirements at a time.",
-      "why": "Four separate per-requirement stages meant four system prompts, four round-trips and four chances to time out for every single clause. One batched call sees neighbouring requirements too, which improves consistency of the labels.",
-      "guards": "Model output is parsed defensively at every site; a malformed batch is repaired or re-requested rather than dropped. Reviewer corrections from earlier projects are injected as hints behind a coverage gate.",
+      "label": "Enrich requirements",
+      "sublabel": "strong · 4 fields · ×12",
+      "kind": "llm",
+      "x": 265,
+      "y": 440,
+      "w": 225,
+      "h": 60,
+      "summary": "Category, criticality, owning team and a first feasibility opinion for each requirement — all four fields from one call over a batch of twelve, with category and team names resolved to database ids by fuzzy match.",
+      "why": "Four separate per-requirement stages meant four system prompts, four round-trips and four chances to time out per clause. One batched call also sees neighbouring requirements, which makes labels more consistent.",
+      "guards": "Reviewer corrections from earlier projects are retrieved and injected as hints behind a coverage gate; a seven-variant ablation chose the format. Unknown ids never reach the database — unresolved labels fall back to a default.",
       "naive": {
         "per": "requirement",
         "model": "strong",
@@ -111,17 +229,45 @@
       "batched": {
         "per": "requirement",
         "model": "strong",
-        "calls": 1,
         "batch": 12,
         "concurrency": 6
       }
     },
     {
-      "id": "feasibility",
-      "name": "Feasibility from evidence",
-      "summary": "For each requirement, retrieve what past projects said about similar clauses, rank the evidence, then reason over a batch of ten with citation labels the model must use.",
-      "why": "Without retrieval the model answers from general knowledge and sounds confident about things nobody in the company has ever built. With retrieval and mandatory citations, every verdict points at something a human can open.",
-      "guards": "Claims without a citation to retrieved evidence are stripped and the batch is retried once. Near-identical past requirements with an explicit verdict short-circuit with no model call at all.",
+      "id": "retrieve",
+      "label": "Evidence retrieval",
+      "sublabel": "vector search · multi-query",
+      "kind": "io",
+      "x": 510,
+      "y": 440,
+      "w": 225,
+      "h": 60,
+      "summary": "For each requirement, search past-project evidence and reference documents with several rewritten queries, then rank hits with per-type floors so historical verdicts are never crowded out.",
+      "why": "Without retrieval the model answers from general knowledge and sounds confident about things nobody has ever built.",
+      "guards": "Searches run concurrently against the vector store; a near-identical past requirement with an explicit verdict short-circuits the next stage entirely.",
+      "naive": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 11200
+      },
+      "batched": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 1400
+      }
+    },
+    {
+      "id": "reason",
+      "label": "Feasibility reasoning",
+      "sublabel": "strong · ×10 · short-circuit",
+      "kind": "llm",
+      "x": 510,
+      "y": 524,
+      "w": 225,
+      "h": 60,
+      "summary": "Reason over ten requirements and their evidence per call, citing evidence by label (H1, R2). Requirements with a high-confidence historical match skip the model.",
+      "why": "Batching is what makes a citation check affordable on every requirement rather than a sample.",
+      "guards": "Evidence labels are opaque handles: the model cannot cite what it was not shown. About a fifth of requirements short-circuit with zero calls.",
       "naive": {
         "per": "requirement",
         "model": "strong",
@@ -131,17 +277,48 @@
       "batched": {
         "per": "requirement",
         "model": "strong",
-        "calls": 1,
         "batch": 10,
+        "fraction": 0.8,
+        "concurrency": 8
+      }
+    },
+    {
+      "id": "cite",
+      "label": "Citation check + retry",
+      "sublabel": "strip unsupported · retry ×1",
+      "kind": "gate",
+      "x": 510,
+      "y": 608,
+      "w": 225,
+      "h": 60,
+      "summary": "Every claim's labels are checked against the retrieved set. Unsupported claims are stripped and the batch is retried once with the stripped claims called out. Never twice.",
+      "why": "The naive design had no check — verdicts read well and cited history nobody could open.",
+      "guards": "A second failure returns a shorter answer rather than a loop. Only the batches that failed the check (about one in ten) pay for a retry.",
+      "naive": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 0
+      },
+      "batched": {
+        "per": "requirement",
+        "model": "strong",
+        "batch": 10,
+        "fraction": 0.1,
         "concurrency": 8
       }
     },
     {
       "id": "finalize",
-      "name": "Finalize",
-      "summary": "Rule-based de-duplication across files, one call to summarise the project goal, one to extract basic document metadata.",
-      "why": "De-duplication is a set operation; it never needed a model. Keeping it deterministic makes the output stable between runs.",
-      "guards": "Byte-identical re-uploads are recognised by content hash and reuse the previous result with zero calls.",
+      "label": "Finalize",
+      "sublabel": "dedupe · goal · metadata",
+      "kind": "llm",
+      "x": 755,
+      "y": 608,
+      "w": 225,
+      "h": 60,
+      "summary": "Rule-based de-duplication across files, one call to synthesise the project goal, one to extract basic document metadata, and aggregation of the standards list.",
+      "why": "De-duplication is a set operation and never needed a model. Keeping it deterministic makes output stable between runs.",
+      "guards": "Two model calls per document, fixed, regardless of size.",
       "naive": {
         "per": "document",
         "model": "strong",
@@ -155,23 +332,164 @@
     },
     {
       "id": "translate",
-      "name": "Translate output",
-      "summary": "Every requirement text into each target language. Batched twenty-five strings per call, cached in memory so repeated phrases translate once.",
-      "why": "Translating one string per call made this stage the slowest in the pipeline for a step that adds no intelligence.",
-      "guards": "Translation uses a cheap model with an explicit fallback chain; a failed batch retries item by item so one bad string cannot block a document.",
+      "label": "Translate",
+      "sublabel": "cheap · ×25 · LRU cache",
+      "kind": "llm",
+      "x": 755,
+      "y": 692,
+      "w": 225,
+      "h": 60,
+      "summary": "Every requirement text into each target language, twenty-five strings per call, with an in-memory cache so repeated phrases translate once.",
+      "why": "One string per call made this the slowest stage in the pipeline for a step that adds no intelligence.",
+      "guards": "A failed batch retries item by item so one bad string cannot block a document; an explicit model fallback chain handles provider errors.",
       "naive": {
         "per": "requirement-language",
         "model": "cheap",
-        "calls": 1,
         "concurrency": 4
       },
       "batched": {
         "per": "requirement-language",
         "model": "cheap",
-        "calls": 1,
         "batch": 25,
         "concurrency": 4
       }
+    },
+    {
+      "id": "output",
+      "label": "Stream result",
+      "sublabel": "gRPC stream · 6 languages",
+      "kind": "io",
+      "x": 510,
+      "y": 692,
+      "w": 225,
+      "h": 60,
+      "summary": "Progress frames were streamed after every stage; the final result closes the stream. Progress messages are localised in six languages.",
+      "why": "A ten-minute request with no feedback is a support ticket. Streaming progress is the interface, not an afterthought.",
+      "guards": "Queue heartbeats keep the stream alive through proxies; cancellation propagates back through every stage above.",
+      "naive": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 50
+      },
+      "batched": {
+        "per": "document",
+        "model": "none",
+        "fixedLatencyMs": 50
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "ingest-cache",
+      "from": "ingest",
+      "to": "cache",
+      "label": "",
+      "flow": "Markdown, page images, byte hash"
+    },
+    {
+      "id": "cache-classify",
+      "from": "cache",
+      "to": "classify",
+      "label": "",
+      "flow": "Cache miss: the document is new"
+    },
+    {
+      "id": "classify-triage",
+      "from": "classify",
+      "to": "triage",
+      "label": "spec",
+      "flow": "Document typed as a requirements specification"
+    },
+    {
+      "id": "classify-summarize",
+      "from": "classify",
+      "to": "summarize",
+      "label": "reference",
+      "flow": "Document typed as a reference / norms document"
+    },
+    {
+      "id": "triage-extract",
+      "from": "triage",
+      "to": "extract",
+      "label": "",
+      "flow": "Extractable pages with expected requirement counts"
+    },
+    {
+      "id": "triage-standards",
+      "from": "triage",
+      "to": "standards",
+      "label": "",
+      "flow": "All page text, for the deterministic scanner"
+    },
+    {
+      "id": "extract-guard",
+      "from": "extract",
+      "to": "guard",
+      "label": "",
+      "flow": "Per-page JSON: requirements + standalone norms"
+    },
+    {
+      "id": "guard-enrich",
+      "from": "guard",
+      "to": "enrich",
+      "label": "",
+      "flow": "Complete, repaired requirement list"
+    },
+    {
+      "id": "standards-enrich",
+      "from": "standards",
+      "to": "enrich",
+      "label": "",
+      "flow": "Canonical standards codes attached to the requirements they appear with"
+    },
+    {
+      "id": "enrich-retrieve",
+      "from": "enrich",
+      "to": "retrieve",
+      "label": "",
+      "flow": "Requirements with categories, criticality, teams"
+    },
+    {
+      "id": "retrieve-reason",
+      "from": "retrieve",
+      "to": "reason",
+      "label": "",
+      "flow": "Ranked evidence per requirement, labelled H*/R*"
+    },
+    {
+      "id": "reason-cite",
+      "from": "reason",
+      "to": "cite",
+      "label": "",
+      "flow": "Verdicts with citation labels"
+    },
+    {
+      "id": "cite-finalize",
+      "from": "cite",
+      "to": "finalize",
+      "label": "",
+      "flow": "Grounded verdicts; stripped claims logged"
+    },
+    {
+      "id": "summarize-finalize",
+      "from": "summarize",
+      "to": "finalize",
+      "label": "",
+      "flow": "Summary attached as project context"
+    },
+    {
+      "id": "finalize-translate",
+      "from": "finalize",
+      "to": "translate",
+      "label": "",
+      "flow": "Deduplicated requirements, goal, metadata"
+    },
+    {
+      "id": "translate-output",
+      "from": "translate",
+      "to": "output",
+      "label": "",
+      "flow": "Localised requirement texts"
     }
   ]
 }

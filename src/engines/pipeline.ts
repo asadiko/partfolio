@@ -1,4 +1,4 @@
-import type { CallRule, PipelineFixture, PipelineStage } from '@/lib/schemas';
+import type { CallRule, PipelineFixture, PipelineNode } from '@/lib/schemas';
 
 export type Design = 'naive' | 'batched';
 
@@ -36,7 +36,7 @@ export function unitCount(per: CallRule['per'], doc: DocProfile): number {
 }
 
 function runStage(
-  stage: PipelineStage,
+  stage: PipelineNode,
   rule: CallRule,
   doc: DocProfile,
   cost: CostModel,
@@ -45,7 +45,7 @@ function runStage(
     return { id: stage.id, calls: 0, latencyMs: rule.fixedLatencyMs, costUnits: 0 };
   }
   const tier = cost.tiers[rule.model];
-  const units = unitCount(rule.per, doc);
+  const units = Math.round(unitCount(rule.per, doc) * rule.fraction);
   const groups = rule.batch ? Math.ceil(units / rule.batch) : units;
   const calls = groups * rule.calls;
   const waves = Math.ceil(calls / rule.concurrency);
@@ -60,7 +60,7 @@ function runStage(
 }
 
 export function simulatePipeline(fixture: PipelineFixture, design: Design): PipelineResult {
-  const stages = fixture.stages.map((stage) =>
+  const stages = fixture.nodes.map((stage) =>
     runStage(stage, stage[design], fixture.document, fixture.costModel),
   );
   const totals = stages.reduce(

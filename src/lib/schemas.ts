@@ -4,12 +4,22 @@ const id = z.string().min(1);
 
 export const modelTierSchema = z.enum(['cheap', 'strong', 'none']);
 
+export const diagramEdgeSchema = z.object({
+  id,
+  from: id,
+  to: id,
+  label: z.string(),
+  flow: z.string(),
+});
+
 export const callRuleSchema = z.object({
   per: z.enum(['document', 'page', 'requirement', 'code', 'language', 'requirement-language']),
   model: modelTierSchema,
   calls: z.number().int().positive().default(1),
   batch: z.number().int().positive().optional(),
   concurrency: z.number().int().positive().default(1),
+  /** Share of units this stage actually touches (retries, short-circuits, untaken branches). */
+  fraction: z.number().min(0).max(1).default(1),
   fixedLatencyMs: z.number().nonnegative().default(0),
 });
 
@@ -18,9 +28,15 @@ const costTierSchema = z.object({
   latencyMs: z.number().positive(),
 });
 
-export const pipelineStageSchema = z.object({
+export const pipelineNodeSchema = z.object({
   id,
-  name: z.string(),
+  label: z.string(),
+  sublabel: z.string(),
+  kind: z.enum(['io', 'gate', 'code', 'llm']),
+  x: z.number(),
+  y: z.number(),
+  w: z.number().positive(),
+  h: z.number().positive(),
   summary: z.string(),
   why: z.string(),
   guards: z.string(),
@@ -42,7 +58,10 @@ export const pipelineFixtureSchema = z.object({
     batchOverhead: z.number().nonnegative(),
     tiers: z.object({ cheap: costTierSchema, strong: costTierSchema }),
   }),
-  stages: z.array(pipelineStageSchema).min(1),
+  width: z.number().positive(),
+  height: z.number().positive(),
+  nodes: z.array(pipelineNodeSchema).min(1),
+  edges: z.array(diagramEdgeSchema),
 });
 
 export const claimSchema = z.object({ id, text: z.string(), sourceIds: z.array(id) });
@@ -67,19 +86,12 @@ export const diagramNodeSchema = z.object({
   id,
   label: z.string(),
   sublabel: z.string().optional(),
+  kind: z.enum(['io', 'gate', 'code', 'llm']).optional(),
   x: z.number(),
   y: z.number(),
   w: z.number().positive(),
   h: z.number().positive(),
   card: z.object({ job: z.string(), guards: z.string(), tradeoff: z.string() }),
-});
-
-export const diagramEdgeSchema = z.object({
-  id,
-  from: id,
-  to: id,
-  label: z.string(),
-  flow: z.string(),
 });
 
 export const diagramSpecSchema = z
@@ -131,7 +143,7 @@ export const escrowFixtureSchema = z.object({
 
 export type ModelTier = z.infer<typeof modelTierSchema>;
 export type CallRule = z.infer<typeof callRuleSchema>;
-export type PipelineStage = z.infer<typeof pipelineStageSchema>;
+export type PipelineNode = z.infer<typeof pipelineNodeSchema>;
 export type PipelineFixture = z.infer<typeof pipelineFixtureSchema>;
 export type Claim = z.infer<typeof claimSchema>;
 export type GroundingFixture = z.infer<typeof groundingFixtureSchema>;
