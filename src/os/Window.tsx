@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
+import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 import type { WindowState } from './windowManager';
 import { cx } from '@/lib/cx';
@@ -12,8 +12,11 @@ interface WindowProps {
   onClose: () => void;
   onZoom: () => void;
   onMove: (x: number, y: number) => void;
+  onResize: (width: number, height: number) => void;
   children: ReactNode;
 }
+
+const KEY_STEP = 24;
 
 export function Window({
   win,
@@ -23,10 +26,12 @@ export function Window({
   onClose,
   onZoom,
   onMove,
+  onResize,
   children,
 }: WindowProps) {
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
     if (active) ref.current?.focus({ preventScroll: true });
@@ -45,6 +50,28 @@ export function Window({
   const endDrag = (e: ReactPointerEvent<HTMLDivElement>) => {
     drag.current = null;
     e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const startResize = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    onFocus();
+    resize.current = { x: e.clientX, y: e.clientY, width: win.width, height: win.height };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const moveResize = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    const r = resize.current;
+    if (!r) return;
+    onResize(r.width + (e.clientX - r.x), r.height + (e.clientY - r.y));
+  };
+  const endResize = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    resize.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+  const keyResize = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const dx = e.key === 'ArrowRight' ? KEY_STEP : e.key === 'ArrowLeft' ? -KEY_STEP : 0;
+    const dy = e.key === 'ArrowDown' ? KEY_STEP : e.key === 'ArrowUp' ? -KEY_STEP : 0;
+    if (!dx && !dy) return;
+    e.preventDefault();
+    onResize(win.width + dx, win.height + dy);
   };
 
   return (
@@ -77,11 +104,21 @@ export function Window({
         <button
           type="button"
           className="os-window__box os-window__box--zoom"
-          aria-label={win.zoomed ? `Restore ${title}` : `Zoom ${title}`}
+          aria-label={win.zoomed ? `Exit full screen for ${title}` : `Full screen ${title}`}
           onClick={onZoom}
         />
       </div>
       {children}
+      <button
+        type="button"
+        className="os-window__grip"
+        aria-label={`Resize ${title} (arrow keys)`}
+        onPointerDown={startResize}
+        onPointerMove={moveResize}
+        onPointerUp={endResize}
+        onPointerCancel={endResize}
+        onKeyDown={keyResize}
+      />
     </section>
   );
 }

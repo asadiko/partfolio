@@ -264,18 +264,68 @@
   background: var(--os-face-dark);
 }
 
+.os-window__box--close,
 .os-window__box--zoom {
   position: relative;
+}
+
+/* Close: an × drawn from two rotated bars. Full screen: a small frame with corner ticks. */
+.os-window__box--close::before,
+.os-window__box--close::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 1px;
+  width: 9px;
+  height: 1.5px;
+  background: var(--os-ink);
+  transform: rotate(45deg);
+}
+
+.os-window__box--close::after {
+  transform: rotate(-45deg);
 }
 
 .os-window__box--zoom::after {
   content: '';
   position: absolute;
-  inset: 1px auto auto 1px;
-  width: 6px;
-  height: 6px;
+  inset: 2px;
   border: 1px solid var(--os-ink);
-  border-width: 0 1px 1px 0;
+}
+
+.os-window__box--zoom::before {
+  content: '';
+  position: absolute;
+  inset: 2px 5px 5px 2px;
+  border: 1px solid var(--os-ink);
+  border-width: 1px 0 0 1px;
+  background: var(--os-face);
+}
+
+.os-window__grip {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(
+      135deg,
+      transparent 0 50%,
+      var(--os-shadow) 50% 58%,
+      transparent 58% 70%,
+      var(--os-shadow) 70% 78%,
+      transparent 78%
+    )
+    no-repeat;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.os-window__grip:focus-visible {
+  outline: 2px solid var(--os-select);
+  outline-offset: -2px;
 }
 
 .os-window__body {

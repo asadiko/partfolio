@@ -1,5 +1,5 @@
 ---
-import { site } from '@/site';
+import { site, withBase } from '@/site';
 ---
 
 <footer class="border-line mt-24 border-t">
@@ -8,7 +8,7 @@ import { site } from '@/site';
   >
     <p>{site.name} · {site.location}</p>
     <p class="flex gap-4">
-      <a class="hover:text-ink" href="/">Desktop</a>
+      <a class="hover:text-ink" href={withBase('/')}>Desktop</a>
       <a class="hover:text-ink" href={`mailto:${site.email}`}>Email</a>
       <a class="hover:text-ink" href={site.github} rel="me noopener">GitHub</a>
       <a class="hover:text-ink" href={site.linkedin} rel="me noopener">LinkedIn</a>

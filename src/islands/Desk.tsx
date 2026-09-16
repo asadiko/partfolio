@@ -7,6 +7,7 @@ import type { Room, Theme } from '@/scene/room';
 
 import { Button } from './shared/ui';
 import { cx } from '@/lib/cx';
+import { withBase } from '@/site';
 
 type Phase = 'loading' | 'room' | 'booting' | 'desktop' | 'shutdown';
 
@@ -39,7 +40,7 @@ export function Desk({ data }: { data: DesktopData }) {
   const shutdown = async () => {
     const room = roomRef.current;
     if (!room) {
-      window.location.assign('/work');
+      window.location.assign(withBase('/work'));
       return;
     }
     setPhase('shutdown');

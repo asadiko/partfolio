@@ -1,4 +1,5 @@
 ---
+import { withBase } from '@/site';
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
 
@@ -77,7 +78,10 @@ const next = all[(position + 1) % all.length];
     {
       next && (
         <nav class="border-line mt-16 border-t pt-6" aria-label="Next case study">
-          <a href={`/work/${next.id}`} class="text-accent text-sm underline underline-offset-4">
+          <a
+            href={withBase(`/work/${next.id}`)}
+            class="text-accent text-sm underline underline-offset-4"
+          >
             Next: {next.data.title} →
           </a>
         </nav>

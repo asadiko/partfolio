@@ -1,4 +1,5 @@
 ---
+import { withBase } from '@/site';
 import PageHeader from '@/components/PageHeader.astro';
 import Base from '@/layouts/Base.astro';
 ---
@@ -8,5 +9,7 @@ import Base from '@/layouts/Base.astro';
     title="404"
     lede="No current representation for this target, and I'm not hiding one (RFC 9110 §15.5.5)."
   />
-  <a href="/" class="text-accent text-sm underline underline-offset-4">Back to the start</a>
+  <a href={withBase('/')} class="text-accent text-sm underline underline-offset-4"
+    >Back to the start</a
+  >
 </Base>

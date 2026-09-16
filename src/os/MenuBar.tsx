@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 
 import type { AppId } from './apps';
 import { apps } from './apps';
+import { site, withBase } from '@/site';
 
 interface MenuItem {
   label: string;
@@ -75,10 +76,13 @@ export function MenuBar({ activeTitle, onOpen, onCloseActive, onShutdown }: Menu
     {
       label: 'View',
       items: [
-        { label: 'Text version of this site', action: () => window.location.assign('/work') },
+        {
+          label: 'Text version of this site',
+          action: () => window.location.assign(withBase('/work')),
+        },
         {
           label: 'Résumé (PDF)',
-          action: () => window.open('/Asadulla_Ravshanbekov_CV.pdf', '_blank', 'noopener'),
+          action: () => window.open(site.cvPath, '_blank', 'noopener'),
         },
       ],
     },

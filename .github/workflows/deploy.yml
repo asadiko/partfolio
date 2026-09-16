@@ -1,7 +1,8 @@
 name: Deploy to GitHub Pages
 
-# Manual trigger only. Switch to `on: push: branches: [main]` once the site is approved.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

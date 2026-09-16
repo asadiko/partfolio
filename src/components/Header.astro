@@ -1,6 +1,6 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
-import { nav, site } from '@/site';
+import { nav, site, withBase } from '@/site';
 
 const path = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -14,7 +14,11 @@ const isActive = (href: string) =>
     >Skip to content</a
   >
   <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-    <a href="/" class="text-ink font-semibold tracking-tight" title="Back to the desktop">
+    <a
+      href={withBase('/')}
+      class="text-ink font-semibold tracking-tight"
+      title="Back to the desktop"
+    >
       <span class="text-accent mr-1.5" aria-hidden="true">◆</span>{site.shortName}
     </a>
     <nav aria-label="Primary" class="flex items-center gap-1 sm:gap-2">

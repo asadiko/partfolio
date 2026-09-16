@@ -21,6 +21,7 @@ import type { TerminalAction } from './terminal';
 import type { DesktopData } from './types';
 import type { Viewport } from './windowManager';
 import { initialState, reduce } from './windowManager';
+import { withBase } from '@/site';
 
 interface DesktopProps {
   data: DesktopData;
@@ -117,6 +118,9 @@ export function Desktop({ data, onShutdown }: DesktopProps) {
           onClose={() => dispatch({ type: 'close', id: win.id })}
           onZoom={() => dispatch({ type: 'zoom', id: win.id, viewport: viewport() })}
           onMove={(x, y) => dispatch({ type: 'move', id: win.id, x, y, viewport: viewport() })}
+          onResize={(width, height) =>
+            dispatch({ type: 'resize', id: win.id, width, height, viewport: viewport() })
+          }
         >
           {content[win.id]()}
         </Window>
@@ -124,7 +128,7 @@ export function Desktop({ data, onShutdown }: DesktopProps) {
 
       <p className="os-caption">
         AsadOS · simulated — every app runs on fixture data ·{' '}
-        <a href="/work" style={{ color: 'inherit' }}>
+        <a href={withBase('/work')} style={{ color: 'inherit' }}>
           text version
         </a>
       </p>

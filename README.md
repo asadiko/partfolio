@@ -11,7 +11,7 @@ Astro 7 (static output) · React 19 islands · three.js (home page only, loaded 
 ```bash
 docker compose up --build dev          # http://localhost:4321 — hot reload, bind-mounted source
 docker compose run --rm --build test   # astro check + eslint + prettier --check + vitest
-docker compose up --build preview      # http://localhost:8080 — production build behind nginx (read-only, non-root)
+docker compose up --build preview      # http://localhost:8080/partfolio/ — production build behind nginx, same base path as GitHub Pages
 docker compose run --rm --build e2e    # Playwright smoke test against the preview: routes, viewports, every demo
 ```
 
@@ -57,10 +57,10 @@ Content pages ship no JavaScript except the theme toggle; islands load when scro
 
 ## Deploy (GitHub Pages)
 
-The workflow in `.github/workflows/deploy.yml` builds and publishes to GitHub Pages, but it is **manual-trigger only** until the site is approved:
+Every push to `main` runs `.github/workflows/deploy.yml`: verify → build → publish to GitHub Pages at
+`https://asadiko.github.io/partfolio/`. The repository's Pages source must be **GitHub Actions**
+(Settings → Pages → Source).
 
-1. Push the repository to `github.com/asadiko/asadiko.github.io`.
-2. Repository → Settings → Pages → Source: **GitHub Actions**.
-3. Actions → "Deploy to GitHub Pages" → Run workflow.
-
-To deploy on every push, change the trigger in `deploy.yml` to `on: push: branches: [main]`. `ci.yml` already runs the full verify + build on pushes and pull requests.
+The site is built with `base: /partfolio` (see `astro.config.ts`); every internal link goes through
+`withBase()` from `src/site.ts`. To serve from the root instead, rename the repository to
+`asadiko.github.io` and build with `SITE_BASE=/`.

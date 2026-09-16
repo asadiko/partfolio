@@ -2,7 +2,7 @@
 // console errors or horizontal overflow, and each interactive island does its one job.
 import { chromium } from 'playwright';
 
-const base = process.env.BASE_URL ?? 'http://preview:8080';
+const base = process.env.BASE_URL ?? 'http://preview:8080/partfolio';
 const shots = process.env.SHOTS_DIR ?? '/shots';
 const routes = [
   '/',

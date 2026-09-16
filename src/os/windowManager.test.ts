@@ -50,14 +50,26 @@ describe('windowManager', () => {
     expect(w?.y).toBeGreaterThanOrEqual(0);
   });
 
-  it('shrinks windows to fit small viewports', () => {
+  it('docks windows to the bottom on phones, leaving the icons visible', () => {
     const s = reduce(initialState, {
       type: 'open',
       id: 'pipeline',
       viewport: { width: 390, height: 700 },
     });
-    expect(s.windows[0]?.width).toBeLessThanOrEqual(390);
-    expect(s.windows[0]?.x).toBe(0);
+    const w = s.windows[0];
+    expect(w?.width).toBe(390 - 16);
+    expect(w?.y).toBeGreaterThan(200);
+    expect((w?.y ?? 0) + (w?.height ?? 0)).toBeLessThanOrEqual(700);
+  });
+
+  it('resizes within the viewport and enforces a minimum size', () => {
+    let s = open();
+    s = reduce(s, { type: 'resize', id: 'pipeline', width: 10, height: 10, viewport });
+    expect(s.windows[0]).toMatchObject({ width: 280, height: 160 });
+    s = reduce(s, { type: 'resize', id: 'pipeline', width: 9999, height: 9999, viewport });
+    const w = s.windows[0];
+    expect((w?.x ?? 0) + (w?.width ?? 0)).toBeLessThanOrEqual(viewport.width);
+    expect((w?.y ?? 0) + (w?.height ?? 0)).toBeLessThanOrEqual(viewport.height);
   });
 
   it('toggles zoom and restores the previous frame', () => {

@@ -32,6 +32,7 @@ export type WmAction =
   | { type: 'focus'; id: AppId }
   | { type: 'move'; id: AppId; x: number; y: number; viewport: Viewport }
   | { type: 'zoom'; id: AppId; viewport: Viewport }
+  | { type: 'resize'; id: AppId; width: number; height: number; viewport: Viewport }
   | { type: 'reset' };
 
 export const initialState: WmState = { windows: [], active: null, nextZ: 1 };
@@ -39,12 +40,16 @@ export const initialState: WmState = { windows: [], active: null, nextZ: 1 };
 const MENU_BAR = 22;
 const CASCADE = 28;
 const MIN_VISIBLE = 80;
+const MIN_WIDTH = 280;
+const MIN_HEIGHT = 160;
 const MOBILE_BREAKPOINT = 640;
 
 function fit(id: AppId, viewport: Viewport, index: number): WindowFrame {
   const meta = apps[id];
   if (viewport.width < MOBILE_BREAKPOINT) {
-    return { x: 0, y: MENU_BAR, width: viewport.width, height: viewport.height - MENU_BAR };
+    // Phones: dock the window to the bottom so the icon grid stays visible above it.
+    const height = Math.round(viewport.height * 0.58);
+    return { x: 8, y: viewport.height - height - 8, width: viewport.width - 16, height };
   }
   const width = Math.min(meta.width, viewport.width - 32);
   const height = Math.min(meta.height, viewport.height - MENU_BAR - 32);
@@ -120,6 +125,20 @@ export function reduce(state: WmState, action: WmAction): WmState {
             height: action.viewport.height - MENU_BAR,
           };
         }),
+      };
+    case 'resize':
+      return {
+        ...state,
+        windows: state.windows.map((w) =>
+          w.id === action.id
+            ? {
+                ...w,
+                zoomed: false,
+                width: Math.max(MIN_WIDTH, Math.min(action.width, action.viewport.width - w.x)),
+                height: Math.max(MIN_HEIGHT, Math.min(action.height, action.viewport.height - w.y)),
+              }
+            : w,
+        ),
       };
     case 'reset':
       return initialState;

@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 import { Desk } from '@/islands/Desk';
 import Base from '@/layouts/Base.astro';
 import { loadDesktopData } from '@/lib/renderDocs';
-import { site } from '@/site';
+import { site, withBase } from '@/site';
 import '@/styles/os.css';
 
 const data = await loadDesktopData();
@@ -22,13 +22,13 @@ const studies = (await getCollection('caseStudies')).sort((a, b) => a.data.order
         {
           studies.map((s) => (
             <li>
-              <a href={`/work/${s.id}`}>{s.data.title}</a>
+              <a href={withBase(`/work/${s.id}`)}>{s.data.title}</a>
             </li>
           ))
         }
-        <li><a href="/journey">Journey</a></li>
-        <li><a href="/about">About</a></li>
-        <li><a href="/contact">Contact</a></li>
+        <li><a href={withBase('/journey')}>Journey</a></li>
+        <li><a href={withBase('/about')}>About</a></li>
+        <li><a href={withBase('/contact')}>Contact</a></li>
       </ul>
     </section>
   </noscript>
@@ -39,7 +39,7 @@ const studies = (await getCollection('caseStudies')).sort((a, b) => a.data.order
       {
         studies.map((s) => (
           <li>
-            <a href={`/work/${s.id}`}>{s.data.title}</a>: {s.data.summary}
+            <a href={withBase(`/work/${s.id}`)}>{s.data.title}</a>: {s.data.summary}
           </li>
         ))
       }

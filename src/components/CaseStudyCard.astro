@@ -1,4 +1,5 @@
 ---
+import { withBase } from '@/site';
 import type { CollectionEntry } from 'astro:content';
 
 interface Props {
@@ -11,7 +12,7 @@ const headline = numbers[0];
 ---
 
 <a
-  href={`/work/${entry.id}`}
+  href={withBase(`/work/${entry.id}`)}
   class="group border-line bg-surface hover:border-accent flex flex-col gap-3 rounded-xl border p-5 transition-colors"
 >
   <span

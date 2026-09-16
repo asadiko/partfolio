@@ -1,4 +1,4 @@
-import { site } from '@/site';
+import { site, withBase } from '@/site';
 
 export function ReadMe() {
   return (
@@ -8,14 +8,13 @@ export function ReadMe() {
       </p>
       <p>{site.description}</p>
       <p>
-        Double-click an icon on the right to open an app. Each demo window has a <em>Read me</em>{' '}
-        tab with the full case study. The Terminal understands <code>help</code>,{' '}
-        <code>ls ~/work</code> and <code>open &lt;app&gt;</code>. <em>Special → Shut Down</em> takes
-        you back to the desk.
+        Tap an icon to open an app. Each demo window has a <em>Read me</em> tab with the full case
+        study. The Terminal understands <code>help</code>, <code>ls ~/work</code> and{' '}
+        <code>open &lt;app&gt;</code>. <em>Special → Shut Down</em> takes you back to the desk.
       </p>
       <p>
         Everything runs on fixture data shipped with the page. Nothing calls a model or a server.
-        Prefer plain pages? <a href="/work">Text version</a>.
+        Prefer plain pages? <a href={withBase('/work')}>Text version</a>.
       </p>
     </div>
   );
