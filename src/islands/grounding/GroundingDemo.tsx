@@ -10,6 +10,7 @@ import type { GroundingQuestion } from '@/lib/schemas';
 import { SimBadge } from '../shared/SimBadge';
 import { Button, Panel, Segmented } from '../shared/ui';
 import { useTicker } from '../shared/useTicker';
+import { cx } from '@/lib/cx';
 
 type Phase = 'idle' | 'retrieving' | 'drafting' | 'checking' | 'retrying' | 'done';
 
@@ -163,12 +164,12 @@ export function GroundingDemo() {
             type="button"
             onClick={() => ask(q)}
             aria-pressed={question?.id === q.id}
-            className={[
+            className={cx(
               'rounded-full border px-3 py-1 text-sm transition-colors',
               question?.id === q.id
                 ? 'border-accent bg-accent/10 text-ink'
                 : 'border-line bg-surface text-muted hover:text-ink',
-            ].join(' ')}
+            )}
           >
             {q.text}
           </button>
@@ -195,11 +196,11 @@ export function GroundingDemo() {
                   return (
                     <li
                       key={hit.chunkId}
-                      className={[
+                      className={cx(
                         'rounded-md border px-3 py-2 text-sm transition-opacity duration-500',
                         inSet ? 'border-accent/40 bg-accent/5' : 'border-line opacity-60',
                         visible ? 'opacity-100' : 'opacity-0',
-                      ].join(' ')}
+                      )}
                     >
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="text-ink font-medium">{chunk?.source}</span>
@@ -278,14 +279,14 @@ function ClaimList({
         return (
           <li
             key={claim.id}
-            className={[
+            className={cx(
               'rounded-md border px-3 py-2 text-sm leading-relaxed transition-colors duration-500',
               stripped
                 ? 'border-fail/40 text-muted'
                 : bad
                   ? 'border-warn/60 bg-warn/10 text-ink'
                   : 'border-line text-ink',
-            ].join(' ')}
+            )}
           >
             <span className={stripped ? 'decoration-fail/70 line-through' : ''}>{claim.text}</span>
             <span className="mt-1 flex flex-wrap gap-1">

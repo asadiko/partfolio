@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react';
 import type { DiagramSpec } from '@/lib/schemas';
 
 import { routeEdge } from './geometry';
+import { cx } from '@/lib/cx';
 
 export type NodeStatus = 'idle' | 'info' | 'ok' | 'warn' | 'fail' | 'recover';
 
@@ -104,14 +105,14 @@ export function Diagram({
                 fill="none"
                 markerEnd={`url(#${markerId})`}
                 strokeWidth={active ? 2.5 : 1.5}
-                className={[
+                className={cx(
                   'transition-[stroke,stroke-width] duration-300',
                   active
                     ? 'stroke-accent diagram-edge-active'
                     : hoveredEdge === edge.id
                       ? 'stroke-ink'
                       : 'stroke-line',
-                ].join(' ')}
+                )}
               />
               {edge.label && (
                 <text
@@ -148,10 +149,10 @@ export function Diagram({
                 height={node.h}
                 rx={10}
                 strokeWidth={isSelected ? 2.5 : 1.5}
-                className={[
+                className={cx(
                   'fill-surface transition-[stroke] duration-300',
                   isSelected ? 'stroke-ink' : nodeStroke[s],
-                ].join(' ')}
+                )}
               />
               {s !== 'idle' && (
                 <rect

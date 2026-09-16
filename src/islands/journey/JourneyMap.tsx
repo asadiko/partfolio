@@ -5,6 +5,7 @@ import { usePrefersReducedMotion } from '@/lib/motion';
 
 import { VIEW, cityPoints, hubOf, labelPosition, route, segmentPath } from './map';
 import type { City, Milestone, MilestoneKind } from './types';
+import { cx } from '@/lib/cx';
 
 const kindLabel: Record<MilestoneKind, string> = {
   school: 'School',
@@ -136,10 +137,10 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
                 onClick={() => setIndex(i)}
                 onFocus={() => setIndex(i)}
                 onKeyDown={onKey}
-                className={[
+                className={cx(
                   'w-full rounded-lg border p-3 text-left transition-colors',
                   on ? 'border-accent bg-accent/8' : 'border-line bg-surface hover:bg-raised',
-                ].join(' ')}
+                )}
               >
                 <span className="text-faint flex items-center gap-2 font-mono text-[11px]">
                   {m.date}
@@ -148,10 +149,10 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
                 </span>
                 <span className="text-ink mt-0.5 block text-sm font-medium">{m.title}</span>
                 <span
-                  className={[
+                  className={cx(
                     'text-muted mt-1 block text-sm leading-relaxed',
                     on ? '' : 'hidden',
-                  ].join(' ')}
+                  )}
                 >
                   {m.body}
                 </span>

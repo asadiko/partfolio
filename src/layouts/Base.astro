@@ -7,9 +7,11 @@ import '@/styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  /** Hide the site header/footer for full-viewport pages. */
+  bare?: boolean;
 }
 
-const { title, description = site.description } = Astro.props;
+const { title, description = site.description, bare = false } = Astro.props;
 const fullTitle = title ? `${title} · ${site.shortName}` : site.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
@@ -29,12 +31,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:url" content={canonical} />
     <meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#131312" media="(prefers-color-scheme: dark)" />
+    <slot name="head" />
   </head>
   <body class="flex min-h-dvh flex-col">
-    <Header />
-    <main id="main" class="mx-auto w-full max-w-5xl flex-1 px-4 pt-10 sm:px-6">
+    {!bare && <Header />}
+    <main
+      id="main"
+      class:list={[bare ? 'flex-1' : 'mx-auto w-full max-w-5xl flex-1 px-4 pt-10 sm:px-6']}
+    >
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
   </body>
 </html>

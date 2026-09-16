@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { cx } from '@/lib/cx';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' };
 
@@ -40,10 +41,10 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={checked}
             onClick={() => onChange(option.value)}
-            className={[
+            className={cx(
               'rounded px-3 py-1 text-sm transition-colors',
               checked ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink',
-            ].join(' ')}
+            )}
           >
             {option.label}
           </button>

@@ -11,6 +11,7 @@ import { SimBadge } from '../shared/SimBadge';
 import { Button, Definition, Panel, Segmented } from '../shared/ui';
 import { useAnimatedNumber } from '../shared/useAnimatedNumber';
 import { useTicker } from '../shared/useTicker';
+import { cx } from '@/lib/cx';
 
 const STEP_MS = 420;
 const designs = [
@@ -106,7 +107,7 @@ export function PipelineExplorer() {
                 type="button"
                 aria-pressed={isSelected}
                 onClick={() => setSelectedId(stage.id)}
-                className={[
+                className={cx(
                   'w-full rounded-lg border p-3 text-left transition-[border-color,background-color,opacity] duration-300',
                   isLit ? 'opacity-100' : 'opacity-40',
                   isSelected
@@ -114,7 +115,7 @@ export function PipelineExplorer() {
                     : isLit
                       ? 'border-line bg-surface hover:bg-raised'
                       : 'border-line bg-surface',
-                ].join(' ')}
+                )}
               >
                 <span className="text-faint block font-mono text-[11px]">
                   {String(i + 1).padStart(2, '0')}

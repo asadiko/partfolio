@@ -1,10 +1,10 @@
 # asadiko.github.io
 
-Personal portfolio: four interactive, fixture-driven case studies (a batched LLM pipeline, citation-grounded retrieval, a failure-mode playground, an escrow-ledger walkthrough) and a journey map. Fully static — no backend, no API keys, no tracking.
+Personal portfolio. The home page is a 3D room with a procedurally modelled iMac G3 (three.js); turning it on boots "AsadOS", a late-90s-style desktop where four interactive, fixture-driven case studies (a batched LLM pipeline, citation-grounded retrieval, a failure-mode playground, an escrow-ledger walkthrough), a journey map, about and contact run as windows. The same content exists as plain pages (`/work/*`, `/journey`, `/about`, `/contact`) — the fallback when WebGL is unavailable or motion is reduced, and what search engines index. Fully static — no backend, no API keys, no tracking.
 
 ## Stack
 
-Astro 5 (static output) · React 19 islands for the interactive pieces · TypeScript strict · Tailwind v4 · Zod-validated fixtures · Vitest · ESLint + Prettier · Docker for every workflow.
+Astro 7 (static output) · React 19 islands · three.js (home page only, loaded lazily) · TypeScript strict · Tailwind v4 · zod-validated fixtures · Vitest · Playwright smoke test · ESLint (jsx-a11y strict) + Prettier · Docker for every workflow.
 
 ## Run it (Docker only)
 
@@ -28,9 +28,11 @@ fixtures/            demo data — extend these to change what the demos show
   playground.json    LLM-pipeline topology (nodes, edges, cards) and scenario copy
   escrow.json        escrow-wallet topology and the guided-tour steps
 src/
-  content/           MDX/Markdown — case studies, journey milestones, (empty) blog
+  content/           MDX/Markdown — case studies, journey milestones, about, (empty) blog
   engines/           pure simulation logic with tests: pipeline cost model, grounding, scenarios
-  islands/           React islands (hydrated on visibility) + the shared SVG Diagram
+  scene/             three.js room: iMac model, CRT canvas texture, tween scheduler, camera + input
+  os/                AsadOS: window-manager reducer (tested), menu bar, windows, apps, terminal parser (tested)
+  islands/           React islands (hydrated on visibility) + the shared SVG Diagram; Desk.tsx runs the home page
   components/        Astro components (no client JS)
   pages/             routes
   lib/               Zod schemas, fixture loaders, formatting, reduced-motion hook
@@ -50,7 +52,7 @@ Fixtures are parsed with Zod at import time, so a malformed fixture fails the bu
 
 ## Accessibility and performance
 
-No JavaScript on content pages except the theme toggle; islands load when scrolled into view. All demos are keyboard-operable; diagrams expose nodes as buttons and edges as labelled images. `prefers-reduced-motion` disables streaming and animation. Light/dark follow the system with a per-load toggle (nothing is persisted).
+Content pages ship no JavaScript except the theme toggle; islands load when scrolled into view. The home page renders its HTML first and fades the WebGL canvas in; three.js (≈140 KB gzipped) is imported only there and only on the client. All demos are keyboard-operable; diagrams expose nodes as buttons and edges as labelled images. `prefers-reduced-motion` disables streaming and animation. Light/dark follow the system with a per-load toggle (nothing is persisted).
 
 ## Deploy (GitHub Pages)
 

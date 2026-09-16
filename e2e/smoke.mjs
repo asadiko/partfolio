@@ -97,10 +97,34 @@ await page.keyboard.press('ArrowDown');
 const current = await page.locator('[aria-current="step"]').textContent();
 if (!current?.includes('Olber')) fail(`journey: arrow key landed on "${current?.slice(0, 40)}"`);
 
-await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+await page.goto(`${base}/about`, { waitUntil: 'networkidle' });
 await page.getByRole('button', { name: 'Toggle colour theme' }).click();
 if ((await page.evaluate(() => document.documentElement.dataset.theme)) !== 'dark')
   fail('theme toggle did not switch to dark');
+
+// AsadOS: room → boot → desktop → apps → terminal → shutdown
+await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 15000 });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `${shots}/os-room.png` });
+await page.getByRole('button', { name: 'Turn on' }).click();
+await page.waitForTimeout(2200);
+await page.screenshot({ path: `${shots}/os-boot.png` });
+await page.getByRole('dialog', { name: 'Read Me' }).waitFor({ timeout: 10000 });
+await page.getByRole('button', { name: 'Open Pipeline Explorer' }).click();
+await page.getByRole('dialog', { name: 'Pipeline Explorer' }).waitFor();
+await page.getByRole('tab', { name: 'Read me' }).click();
+if ((await page.getByRole('heading', { name: 'The problem' }).count()) === 0)
+  fail('os: read-me tab has no prose');
+await page.getByRole('tab', { name: 'Demo' }).click();
+await page.getByRole('button', { name: 'Open Terminal' }).click();
+await page.getByLabel('Command').fill('open grounding');
+await page.keyboard.press('Enter');
+await page.getByRole('dialog', { name: 'Grounding' }).waitFor();
+await page.screenshot({ path: `${shots}/os-desktop.png` });
+await page.getByRole('menuitem', { name: 'Special' }).dispatchEvent('pointerdown');
+await page.getByRole('menuitem', { name: 'Shut Down' }).click();
+await page.getByRole('button', { name: 'Turn on' }).waitFor({ timeout: 10000 });
 await context.close();
 
 const reduced = await browser.newContext({ ...viewports.desktop, reducedMotion: 'reduce' });

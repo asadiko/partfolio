@@ -29,6 +29,11 @@ const journey = defineCollection({
   }),
 });
 
+const pages = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/pages' }),
+  schema: z.object({ title: z.string() }),
+});
+
 const blog = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/blog' }),
   schema: z.object({
@@ -39,4 +44,4 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { caseStudies, journey, blog };
+export const collections = { caseStudies, journey, pages, blog };

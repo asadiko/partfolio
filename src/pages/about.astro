@@ -1,7 +1,13 @@
 ---
+import { getEntry, render } from 'astro:content';
+
 import PageHeader from '@/components/PageHeader.astro';
 import Base from '@/layouts/Base.astro';
 import { site } from '@/site';
+
+const about = await getEntry('pages', 'about');
+if (!about) throw new Error('missing pages/about');
+const { Content } = await render(about);
 
 const skills = [
   {
@@ -40,45 +46,7 @@ const skills = [
   <PageHeader title="About" />
   <div class="grid gap-12 lg:grid-cols-[3fr_2fr]">
     <div class="prose-site">
-      <p>
-        I'm a machine learning engineer in Munich. Since 2023 I've worked at Semorai, a German
-        software company with automotive and manufacturing enterprise clients, on an LLM
-        document-intelligence platform. I built the first version of its requirement-extraction
-        service and was the primary developer of the rewrite — about half of all commits, most of
-        the integration and release work, 219 automated releases. I co-developed the shared LLM
-        gateway every service on the platform calls through.
-      </p>
-      <p>
-        Outside work I'm co-founder and CTO of Olber, a services marketplace in Uzbekistan with a
-        real-money escrow wallet, live on both app stores with over ten thousand registered users.
-        Three of us built and operate it in evenings and weekends.
-      </p>
-      <h2>How I work</h2>
-      <p>
-        I start from production output, not from the design doc. Most of what I'm proud of began as
-        a root-cause analysis of something wrong in a real result — a standards code spelled four
-        ways, a citation nobody could open, a stream that died at exactly sixty seconds. The fix
-        usually made the model do less: deterministic code first, the model last, and only asked the
-        one question it's good at.
-      </p>
-      <p>
-        I write a lot of tests — 21,000 lines into one suite — because the systems I build run for
-        minutes and fail in ways a unit test can't see. I'd rather ship a hedged number than an
-        impressive one. And I like being the person who integrates other people's work and cuts the
-        release.
-      </p>
-      <h2>Before Munich</h2>
-      <p>
-        School in Tashkent, a computer science degree at Riga Technical University (thesis on
-        skin-lesion classification, 96.94% on HAM10000 with a caveat I'm happy to discuss), a first
-        job two months into the first semester, five hackathon placements across Riga, Helsinki and
-        St. Gallen, and a student community in Riga I helped run. The
-        <a href="/journey">journey page</a> has the map.
-      </p>
-      <p>
-        English and Russian fluently, Uzbek natively, German as a beginner. Authorised to work in
-        Germany.
-      </p>
+      <Content />
     </div>
     <aside>
       <h2 class="text-ink mb-4 text-base font-semibold">Skills, by strength of evidence</h2>
