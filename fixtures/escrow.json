@@ -8,7 +8,10 @@
         "id": "apps",
         "label": "Mobile apps",
         "sublabel": "client · worker",
-        "x": 20, "y": 190, "w": 150, "h": 64,
+        "x": 20,
+        "y": 190,
+        "w": 150,
+        "h": 64,
         "card": {
           "job": "Clients post orders and fund them; workers bid, do the job, and get paid out. Both talk to the same backend with different roles.",
           "guards": "The app never computes money. It displays balances the ledger reports.",
@@ -19,7 +22,10 @@
         "id": "api",
         "label": "API services",
         "sublabel": "auth · orders · payments",
-        "x": 220, "y": 190, "w": 160, "h": 64,
+        "x": 220,
+        "y": 190,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "Two small Node services: one for auth, identity verification and orders; one for payments and payouts. Both are thin — business rules live in database functions so that the mobile apps and the admin tools cannot disagree.",
           "guards": "Duplicate side effects: every money-moving call takes an idempotency key.",
@@ -30,7 +36,10 @@
         "id": "db",
         "label": "PostgreSQL",
         "sublabel": "row-level security",
-        "x": 430, "y": 190, "w": 150, "h": 64,
+        "x": 430,
+        "y": 190,
+        "w": 150,
+        "h": 64,
         "card": {
           "job": "System of record. Row-level security policies decide who can read and write each row, so an authorisation bug in one client cannot expose another user's data.",
           "guards": "Marketplace-wide data exposure through a mis-scoped query.",
@@ -41,7 +50,10 @@
         "id": "ledger",
         "label": "Escrow ledger",
         "sublabel": "append-only",
-        "x": 630, "y": 60, "w": 160, "h": 64,
+        "x": 630,
+        "y": 60,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "Every movement of money is an immutable entry: deposit, hold, release, commission, payout, reversal. Balances are sums over entries, never stored counters.",
           "guards": "Silent balance drift. An append-only table cannot lose history; a mistaken entry is corrected by a compensating entry, visibly.",
@@ -52,7 +64,10 @@
         "id": "reconciler",
         "label": "Daily reconciler",
         "sublabel": "invariant: Σ = 0",
-        "x": 630, "y": 320, "w": 160, "h": 64,
+        "x": 630,
+        "y": 320,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "Once a day, checks that deposits minus holds, releases, commissions and payouts equals the aggregator's reported balance — to the cent — and alerts on any delta.",
           "guards": "The class of bug that is invisible for months and then very expensive.",
@@ -63,7 +78,10 @@
         "id": "outbox",
         "label": "Outbox worker",
         "sublabel": "at-least-once",
-        "x": 630, "y": 190, "w": 160, "h": 64,
+        "x": 630,
+        "y": 190,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "Side effects that must happen after a transaction commits (payout instruction, push notification) are written to an outbox table in the same transaction and delivered by a worker.",
           "guards": "The half-done state where the database committed but the external call never happened, or vice versa.",
@@ -74,7 +92,10 @@
         "id": "aggregator",
         "label": "Card aggregator",
         "sublabel": "external",
-        "x": 840, "y": 190, "w": 140, "h": 64,
+        "x": 840,
+        "y": 190,
+        "w": 140,
+        "h": 64,
         "card": {
           "job": "Charges cards and executes payouts. Reports events back through webhooks.",
           "guards": "Forged or replayed webhooks: each one is HMAC-verified and de-duplicated by event id before it can touch the ledger.",
@@ -83,23 +104,92 @@
       }
     ],
     "edges": [
-      { "id": "apps-api", "from": "apps", "to": "api", "label": "HTTPS", "flow": "Authenticated requests with an idempotency key on anything that moves money" },
-      { "id": "api-db", "from": "api", "to": "db", "label": "", "flow": "Calls to database functions under the caller's role; RLS applies" },
-      { "id": "db-ledger", "from": "db", "to": "ledger", "label": "append", "flow": "Ledger entries written inside the same transaction as the order state change" },
-      { "id": "db-outbox", "from": "db", "to": "outbox", "label": "commit", "flow": "Outbox rows become visible to the worker only after commit" },
-      { "id": "outbox-aggregator", "from": "outbox", "to": "aggregator", "label": "payout", "flow": "Payout instruction, retried with backoff until acknowledged" },
-      { "id": "aggregator-api", "from": "aggregator", "to": "api", "label": "webhook", "flow": "Signed events: charge succeeded, payout settled, chargeback" },
-      { "id": "ledger-reconciler", "from": "ledger", "to": "reconciler", "label": "", "flow": "Nightly sum over all entries per wallet" },
-      { "id": "aggregator-reconciler", "from": "aggregator", "to": "reconciler", "label": "", "flow": "Aggregator-side balance report for the same period" }
+      {
+        "id": "apps-api",
+        "from": "apps",
+        "to": "api",
+        "label": "HTTPS",
+        "flow": "Authenticated requests with an idempotency key on anything that moves money"
+      },
+      {
+        "id": "api-db",
+        "from": "api",
+        "to": "db",
+        "label": "",
+        "flow": "Calls to database functions under the caller's role; RLS applies"
+      },
+      {
+        "id": "db-ledger",
+        "from": "db",
+        "to": "ledger",
+        "label": "append",
+        "flow": "Ledger entries written inside the same transaction as the order state change"
+      },
+      {
+        "id": "db-outbox",
+        "from": "db",
+        "to": "outbox",
+        "label": "commit",
+        "flow": "Outbox rows become visible to the worker only after commit"
+      },
+      {
+        "id": "outbox-aggregator",
+        "from": "outbox",
+        "to": "aggregator",
+        "label": "payout",
+        "flow": "Payout instruction, retried with backoff until acknowledged"
+      },
+      {
+        "id": "aggregator-api",
+        "from": "aggregator",
+        "to": "api",
+        "label": "webhook",
+        "flow": "Signed events: charge succeeded, payout settled, chargeback"
+      },
+      {
+        "id": "ledger-reconciler",
+        "from": "ledger",
+        "to": "reconciler",
+        "label": "",
+        "flow": "Nightly sum over all entries per wallet"
+      },
+      {
+        "id": "aggregator-reconciler",
+        "from": "aggregator",
+        "to": "reconciler",
+        "label": "",
+        "flow": "Aggregator-side balance report for the same period"
+      }
     ]
   },
   "tour": [
-    { "nodeId": "apps", "text": "A client funds an order from the app. The app sends the amount and an idempotency key; it does not touch balances." },
-    { "nodeId": "api", "text": "The payments service validates the request and calls one database function. Retrying the same key returns the same result." },
-    { "nodeId": "db", "text": "Inside a single transaction: the order moves to funded, a hold entry lands in the ledger, and an outbox row is written." },
-    { "nodeId": "ledger", "text": "The ledger now has a deposit and a hold. The client's available balance is a sum, so it is already correct." },
-    { "nodeId": "outbox", "text": "After commit, the worker picks up the outbox row and notifies the worker who bid. If the push fails, it retries; if it is delivered twice, the consumer ignores the duplicate." },
-    { "nodeId": "aggregator", "text": "When the job is accepted, a payout instruction goes to the aggregator. Its webhook comes back signed; the signature is checked before anything is written." },
-    { "nodeId": "reconciler", "text": "That night the reconciler sums every entry and compares it with the aggregator's report. Zero delta, or a page." }
+    {
+      "nodeId": "apps",
+      "text": "A client funds an order from the app. The app sends the amount and an idempotency key; it does not touch balances."
+    },
+    {
+      "nodeId": "api",
+      "text": "The payments service validates the request and calls one database function. Retrying the same key returns the same result."
+    },
+    {
+      "nodeId": "db",
+      "text": "Inside a single transaction: the order moves to funded, a hold entry lands in the ledger, and an outbox row is written."
+    },
+    {
+      "nodeId": "ledger",
+      "text": "The ledger now has a deposit and a hold. The client's available balance is a sum, so it is already correct."
+    },
+    {
+      "nodeId": "outbox",
+      "text": "After commit, the worker picks up the outbox row and notifies the worker who bid. If the push fails, it retries; if it is delivered twice, the consumer ignores the duplicate."
+    },
+    {
+      "nodeId": "aggregator",
+      "text": "When the job is accepted, a payout instruction goes to the aggregator. Its webhook comes back signed; the signature is checked before anything is written."
+    },
+    {
+      "nodeId": "reconciler",
+      "text": "That night the reconciler sums every entry and compares it with the aggregator's report. Zero delta, or a page."
+    }
   ]
 }

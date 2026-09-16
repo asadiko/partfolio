@@ -35,7 +35,12 @@ export function unitCount(per: CallRule['per'], doc: DocProfile): number {
   }
 }
 
-function runStage(stage: PipelineStage, rule: CallRule, doc: DocProfile, cost: CostModel): StageResult {
+function runStage(
+  stage: PipelineStage,
+  rule: CallRule,
+  doc: DocProfile,
+  cost: CostModel,
+): StageResult {
   if (rule.model === 'none') {
     return { id: stage.id, calls: 0, latencyMs: rule.fixedLatencyMs, costUnits: 0 };
   }

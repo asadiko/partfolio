@@ -4,7 +4,7 @@ Date: 2026-09-16. Owner: Asadulla Ravshanbekov. Target: `asadiko.github.io` (dep
 
 ## Goal
 
-A static portfolio where an engineering manager or senior engineer at an AI/ML company can *interact* with
+A static portfolio where an engineering manager or senior engineer at an AI/ML company can _interact_ with
 the systems the author has built — pipeline explorer, grounding demo, failure-mode playground, architecture
 walkthrough — and a journey map (Tashkent → Riga → Munich). Ninety seconds to earn a second look.
 
@@ -35,16 +35,16 @@ walkthrough — and a journey map (Tashkent → Riga → Munich). Ninety seconds
 
 ## Site map
 
-| Route | Content |
-|---|---|
-| `/` | Name, one-line positioning, four demo entry cards, "now" strip, contact links. Zero JS except theme toggle. |
-| `/work/batched-pipeline` | Case study 1 + Pipeline explorer island. |
-| `/work/grounded-answers` | Case study 2 + Retrieval & grounding island. |
-| `/work/long-running-streams` | Case study 3 + Failure-mode playground island (clickable architecture diagram). |
-| `/work/escrow-ledger` | Case study 4 (Olber) + animated architecture walkthrough (Diagram island, no injection). |
-| `/journey` | Journey map island (SVG route + milestone timeline). |
-| `/about` | Prose + evidenced skill groups. |
-| `/contact` | Email, LinkedIn, GitHub, CV PDF slot. |
+| Route                        | Content                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `/`                          | Name, one-line positioning, four demo entry cards, "now" strip, contact links. Zero JS except theme toggle. |
+| `/work/batched-pipeline`     | Case study 1 + Pipeline explorer island.                                                                    |
+| `/work/grounded-answers`     | Case study 2 + Retrieval & grounding island.                                                                |
+| `/work/long-running-streams` | Case study 3 + Failure-mode playground island (clickable architecture diagram).                             |
+| `/work/escrow-ledger`        | Case study 4 (Olber) + animated architecture walkthrough (Diagram island, no injection).                    |
+| `/journey`                   | Journey map island (SVG route + milestone timeline).                                                        |
+| `/about`                     | Prose + evidenced skill groups.                                                                             |
+| `/contact`                   | Email, LinkedIn, GitHub, CV PDF slot.                                                                       |
 
 Every case study MDX follows: problem (two sentences) → first attempt and why it failed → what worked →
 the number that moved. Plain language; no marketing adjectives.
@@ -52,6 +52,7 @@ the number that moved. Plain language; no marketing adjectives.
 ## Interactive pieces
 
 ### Pipeline explorer (`src/islands/pipeline/`)
+
 Input: fixture describing a sample RFC (page count, requirement count, standards-code count) and a stage
 list. Engine `simulatePipeline(doc, design: 'naive' | 'batched')` returns per-stage call counts, estimated
 latency, and relative cost from a documented cost model (per-item calls × items vs. `ceil(items / batch)`).
@@ -60,6 +61,7 @@ UI: stages light up sequentially (instant under reduced motion); clicking a stag
 counters. Numbers labelled as an illustrative model, not production measurements.
 
 ### Retrieval & grounding (`src/islands/grounding/`)
+
 Fixture: corpus chunks from RFC text (id, source, section, text), canned questions with retrieval scores per
 chunk, and a draft answer as a list of claims each with `sourceIds`. Engine `groundAnswer(draft, retrieved,
 { enforce })`: a claim is supported iff every cited source is in the retrieved set; unsupported claims are
@@ -69,6 +71,7 @@ text (matched to nearest canned question by token overlap), ranked evidence list
 streams token by token, unsupported claims are struck through (enforced) or highlighted (unenforced).
 
 ### Failure-mode playground (`src/islands/playground/`)
+
 Diagram model: client → gateway (admission control, circuit breaker, load balancer) → extraction service
 → model endpoints A/B/C; a proxy sits between client and gateway. Engine: a deterministic state machine
 `runScenario(scenario)` producing an ordered list of events `{ at, node | edge, kind, message }`.
@@ -78,11 +81,13 @@ badges), an event log fills in, and a "what guards this" note per scenario. Node
 (job / failure mode guarded / trade-off) and edges show what flows on hover or focus.
 
 ### Architecture walkthrough (`Diagram` reused, `src/islands/diagram/`)
+
 Declarative `DiagramSpec` (nodes with position, label, card; edges with label). Used by the playground and by
 the Olber escrow page, where an autoplay tour steps through the nodes (pauses under reduced motion; always
 step-able by keyboard).
 
 ### Journey map (`src/islands/journey/`)
+
 Hand-drawn simplified SVG route with three city markers and milestones from the `journey` collection. Scroll
 or arrow keys move the active milestone; the route segment to the active city is highlighted. No map tiles.
 

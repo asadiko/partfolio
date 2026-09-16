@@ -76,16 +76,48 @@
         { "chunkId": "post", "score": 0.31 }
       ],
       "draft": [
-        { "id": "s1", "text": "GET, HEAD, OPTIONS and TRACE are the safe methods.", "sourceIds": ["safe-methods"] },
-        { "id": "s2", "text": "Safe means the client does not request or expect any state change on the server — the semantics are essentially read-only.", "sourceIds": ["safe-methods"] },
-        { "id": "s3", "text": "Every safe method is also idempotent, since repeating a read changes nothing.", "sourceIds": ["idempotent-methods"] },
-        { "id": "s4", "text": "Servers are required to reject and log any safe-method request that would cause a side effect.", "sourceIds": ["server-enforcement-rules"] }
+        {
+          "id": "s1",
+          "text": "GET, HEAD, OPTIONS and TRACE are the safe methods.",
+          "sourceIds": ["safe-methods"]
+        },
+        {
+          "id": "s2",
+          "text": "Safe means the client does not request or expect any state change on the server — the semantics are essentially read-only.",
+          "sourceIds": ["safe-methods"]
+        },
+        {
+          "id": "s3",
+          "text": "Every safe method is also idempotent, since repeating a read changes nothing.",
+          "sourceIds": ["idempotent-methods"]
+        },
+        {
+          "id": "s4",
+          "text": "Servers are required to reject and log any safe-method request that would cause a side effect.",
+          "sourceIds": ["server-enforcement-rules"]
+        }
       ],
       "retry": [
-        { "id": "s1", "text": "GET, HEAD, OPTIONS and TRACE are the safe methods.", "sourceIds": ["safe-methods"] },
-        { "id": "s2", "text": "Safe means the client does not request or expect any state change on the server — the semantics are essentially read-only.", "sourceIds": ["safe-methods"] },
-        { "id": "s3", "text": "Every safe method is also idempotent, since repeating a read changes nothing.", "sourceIds": ["idempotent-methods"] },
-        { "id": "s4r", "text": "Safety describes the client's intent, not a server guarantee: a server may still log or have other side effects while serving a safe method.", "sourceIds": ["safe-methods"] }
+        {
+          "id": "s1",
+          "text": "GET, HEAD, OPTIONS and TRACE are the safe methods.",
+          "sourceIds": ["safe-methods"]
+        },
+        {
+          "id": "s2",
+          "text": "Safe means the client does not request or expect any state change on the server — the semantics are essentially read-only.",
+          "sourceIds": ["safe-methods"]
+        },
+        {
+          "id": "s3",
+          "text": "Every safe method is also idempotent, since repeating a read changes nothing.",
+          "sourceIds": ["idempotent-methods"]
+        },
+        {
+          "id": "s4r",
+          "text": "Safety describes the client's intent, not a server guarantee: a server may still log or have other side effects while serving a safe method.",
+          "sourceIds": ["safe-methods"]
+        }
       ]
     },
     {
@@ -100,15 +132,43 @@
         { "chunkId": "method-caching", "score": 0.33 }
       ],
       "draft": [
-        { "id": "i1", "text": "Yes — DELETE is idempotent: deleting the same resource twice has the same intended effect on the server as deleting it once.", "sourceIds": ["idempotent-methods", "delete"] },
-        { "id": "i2", "text": "POST is not idempotent; each request may create a new resource or append data.", "sourceIds": ["post"] },
-        { "id": "i3", "text": "Because DELETE is idempotent, a client may retry it automatically after a communication failure.", "sourceIds": ["idempotent-methods"] },
-        { "id": "i4", "text": "A second DELETE must return 404, because the resource no longer exists.", "sourceIds": ["status-404"] }
+        {
+          "id": "i1",
+          "text": "Yes — DELETE is idempotent: deleting the same resource twice has the same intended effect on the server as deleting it once.",
+          "sourceIds": ["idempotent-methods", "delete"]
+        },
+        {
+          "id": "i2",
+          "text": "POST is not idempotent; each request may create a new resource or append data.",
+          "sourceIds": ["post"]
+        },
+        {
+          "id": "i3",
+          "text": "Because DELETE is idempotent, a client may retry it automatically after a communication failure.",
+          "sourceIds": ["idempotent-methods"]
+        },
+        {
+          "id": "i4",
+          "text": "A second DELETE must return 404, because the resource no longer exists.",
+          "sourceIds": ["status-404"]
+        }
       ],
       "retry": [
-        { "id": "i1", "text": "Yes — DELETE is idempotent: deleting the same resource twice has the same intended effect on the server as deleting it once.", "sourceIds": ["idempotent-methods", "delete"] },
-        { "id": "i2", "text": "POST is not idempotent; each request may create a new resource or append data.", "sourceIds": ["post"] },
-        { "id": "i3", "text": "Because DELETE is idempotent, a client may retry it automatically after a communication failure.", "sourceIds": ["idempotent-methods"] }
+        {
+          "id": "i1",
+          "text": "Yes — DELETE is idempotent: deleting the same resource twice has the same intended effect on the server as deleting it once.",
+          "sourceIds": ["idempotent-methods", "delete"]
+        },
+        {
+          "id": "i2",
+          "text": "POST is not idempotent; each request may create a new resource or append data.",
+          "sourceIds": ["post"]
+        },
+        {
+          "id": "i3",
+          "text": "Because DELETE is idempotent, a client may retry it automatically after a communication failure.",
+          "sourceIds": ["idempotent-methods"]
+        }
       ]
     },
     {
@@ -123,17 +183,53 @@
         { "chunkId": "delete", "score": 0.29 }
       ],
       "draft": [
-        { "id": "m1", "text": "Return 405 when the resource exists but does not support the method used; the request line's method is known to the server.", "sourceIds": ["status-405"] },
-        { "id": "m2", "text": "A 405 response must carry an Allow header listing the methods the resource does support.", "sourceIds": ["status-405"] },
-        { "id": "m3", "text": "Return 404 when there is no current representation for the target, or the server does not want to reveal that one exists.", "sourceIds": ["status-404"] },
-        { "id": "m4", "text": "If the resource used to exist and was removed permanently, 410 is more precise than 404.", "sourceIds": ["status-410"] },
-        { "id": "m5", "text": "Proxies must convert a 405 into a 404 before forwarding it to untrusted clients.", "sourceIds": ["proxy-behaviour"] }
+        {
+          "id": "m1",
+          "text": "Return 405 when the resource exists but does not support the method used; the request line's method is known to the server.",
+          "sourceIds": ["status-405"]
+        },
+        {
+          "id": "m2",
+          "text": "A 405 response must carry an Allow header listing the methods the resource does support.",
+          "sourceIds": ["status-405"]
+        },
+        {
+          "id": "m3",
+          "text": "Return 404 when there is no current representation for the target, or the server does not want to reveal that one exists.",
+          "sourceIds": ["status-404"]
+        },
+        {
+          "id": "m4",
+          "text": "If the resource used to exist and was removed permanently, 410 is more precise than 404.",
+          "sourceIds": ["status-410"]
+        },
+        {
+          "id": "m5",
+          "text": "Proxies must convert a 405 into a 404 before forwarding it to untrusted clients.",
+          "sourceIds": ["proxy-behaviour"]
+        }
       ],
       "retry": [
-        { "id": "m1", "text": "Return 405 when the resource exists but does not support the method used; the request line's method is known to the server.", "sourceIds": ["status-405"] },
-        { "id": "m2", "text": "A 405 response must carry an Allow header listing the methods the resource does support.", "sourceIds": ["status-405"] },
-        { "id": "m3", "text": "Return 404 when there is no current representation for the target, or the server does not want to reveal that one exists.", "sourceIds": ["status-404"] },
-        { "id": "m4", "text": "If the resource used to exist and was removed permanently, 410 is more precise than 404.", "sourceIds": ["status-410"] }
+        {
+          "id": "m1",
+          "text": "Return 405 when the resource exists but does not support the method used; the request line's method is known to the server.",
+          "sourceIds": ["status-405"]
+        },
+        {
+          "id": "m2",
+          "text": "A 405 response must carry an Allow header listing the methods the resource does support.",
+          "sourceIds": ["status-405"]
+        },
+        {
+          "id": "m3",
+          "text": "Return 404 when there is no current representation for the target, or the server does not want to reveal that one exists.",
+          "sourceIds": ["status-404"]
+        },
+        {
+          "id": "m4",
+          "text": "If the resource used to exist and was removed permanently, 410 is more precise than 404.",
+          "sourceIds": ["status-410"]
+        }
       ]
     },
     {
@@ -147,15 +243,43 @@
         { "chunkId": "status-405", "score": 0.4 }
       ],
       "draft": [
-        { "id": "a1", "text": "401 means the request lacks valid credentials for the resource; the response must include a WWW-Authenticate challenge so the client knows how to authenticate.", "sourceIds": ["status-401"] },
-        { "id": "a2", "text": "403 means the server understood the request and refuses it; if credentials were sent, they are insufficient.", "sourceIds": ["status-403"] },
-        { "id": "a3", "text": "A server that wants to hide that a forbidden resource exists can answer 404 instead of 403.", "sourceIds": ["status-403", "status-404"] },
-        { "id": "a4", "text": "After three consecutive 401 responses, clients must stop retrying and surface an error.", "sourceIds": ["status-401"] }
+        {
+          "id": "a1",
+          "text": "401 means the request lacks valid credentials for the resource; the response must include a WWW-Authenticate challenge so the client knows how to authenticate.",
+          "sourceIds": ["status-401"]
+        },
+        {
+          "id": "a2",
+          "text": "403 means the server understood the request and refuses it; if credentials were sent, they are insufficient.",
+          "sourceIds": ["status-403"]
+        },
+        {
+          "id": "a3",
+          "text": "A server that wants to hide that a forbidden resource exists can answer 404 instead of 403.",
+          "sourceIds": ["status-403", "status-404"]
+        },
+        {
+          "id": "a4",
+          "text": "After three consecutive 401 responses, clients must stop retrying and surface an error.",
+          "sourceIds": ["status-401"]
+        }
       ],
       "retry": [
-        { "id": "a1", "text": "401 means the request lacks valid credentials for the resource; the response must include a WWW-Authenticate challenge so the client knows how to authenticate.", "sourceIds": ["status-401"] },
-        { "id": "a2", "text": "403 means the server understood the request and refuses it; if credentials were sent, they are insufficient.", "sourceIds": ["status-403"] },
-        { "id": "a3", "text": "A server that wants to hide that a forbidden resource exists can answer 404 instead of 403.", "sourceIds": ["status-403", "status-404"] }
+        {
+          "id": "a1",
+          "text": "401 means the request lacks valid credentials for the resource; the response must include a WWW-Authenticate challenge so the client knows how to authenticate.",
+          "sourceIds": ["status-401"]
+        },
+        {
+          "id": "a2",
+          "text": "403 means the server understood the request and refuses it; if credentials were sent, they are insufficient.",
+          "sourceIds": ["status-403"]
+        },
+        {
+          "id": "a3",
+          "text": "A server that wants to hide that a forbidden resource exists can answer 404 instead of 403.",
+          "sourceIds": ["status-403", "status-404"]
+        }
       ]
     },
     {
@@ -169,15 +293,43 @@
         { "chunkId": "head", "score": 0.48 }
       ],
       "draft": [
-        { "id": "g1", "text": "The framing allows it, but content in a GET request has no defined semantics and cannot change what the request means.", "sourceIds": ["get-content"] },
-        { "id": "g2", "text": "Some implementations reject a GET with content and close the connection, because it can be used for request smuggling.", "sourceIds": ["get-content"] },
-        { "id": "g3", "text": "If you need to send a payload that affects the result, POST is the method whose semantics cover processing enclosed content.", "sourceIds": ["post"] },
-        { "id": "g4", "text": "HTTP/2 forbids GET bodies outright at the protocol level.", "sourceIds": ["http2-framing"] }
+        {
+          "id": "g1",
+          "text": "The framing allows it, but content in a GET request has no defined semantics and cannot change what the request means.",
+          "sourceIds": ["get-content"]
+        },
+        {
+          "id": "g2",
+          "text": "Some implementations reject a GET with content and close the connection, because it can be used for request smuggling.",
+          "sourceIds": ["get-content"]
+        },
+        {
+          "id": "g3",
+          "text": "If you need to send a payload that affects the result, POST is the method whose semantics cover processing enclosed content.",
+          "sourceIds": ["post"]
+        },
+        {
+          "id": "g4",
+          "text": "HTTP/2 forbids GET bodies outright at the protocol level.",
+          "sourceIds": ["http2-framing"]
+        }
       ],
       "retry": [
-        { "id": "g1", "text": "The framing allows it, but content in a GET request has no defined semantics and cannot change what the request means.", "sourceIds": ["get-content"] },
-        { "id": "g2", "text": "Some implementations reject a GET with content and close the connection, because it can be used for request smuggling.", "sourceIds": ["get-content"] },
-        { "id": "g3", "text": "If you need to send a payload that affects the result, POST is the method whose semantics cover processing enclosed content.", "sourceIds": ["post"] }
+        {
+          "id": "g1",
+          "text": "The framing allows it, but content in a GET request has no defined semantics and cannot change what the request means.",
+          "sourceIds": ["get-content"]
+        },
+        {
+          "id": "g2",
+          "text": "Some implementations reject a GET with content and close the connection, because it can be used for request smuggling.",
+          "sourceIds": ["get-content"]
+        },
+        {
+          "id": "g3",
+          "text": "If you need to send a payload that affects the result, POST is the method whose semantics cover processing enclosed content.",
+          "sourceIds": ["post"]
+        }
       ]
     }
   ]

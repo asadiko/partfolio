@@ -1,7 +1,65 @@
 ---
+import { getCollection } from 'astro:content';
+
+import CaseStudyCard from '@/components/CaseStudyCard.astro';
 import Base from '@/layouts/Base.astro';
+import { site } from '@/site';
+
+const studies = (await getCollection('caseStudies')).sort((a, b) => a.data.order - b.data.order);
 ---
 
 <Base>
-  <h1 class="text-3xl font-semibold tracking-tight">Scaffold</h1>
+  <section class="max-w-3xl pt-6 sm:pt-12">
+    <p class="text-faint mb-3 font-mono text-xs tracking-wide uppercase">
+      Machine learning engineer · {site.location}
+    </p>
+    <h1 class="text-ink text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+      {site.tagline}
+    </h1>
+    <p class="text-muted mt-5 text-lg leading-relaxed text-pretty">
+      Three years on a production LLM document-intelligence service at Semorai, a German software
+      company with automotive and manufacturing enterprise clients; co-founder of a live marketplace
+      with a real-money escrow wallet. Below, instead of a list of technologies: four systems you
+      can poke at.
+    </p>
+    <p class="text-muted mt-3 text-sm">
+      Every demo runs on fixture data shipped with the page. Nothing here calls a model or a server.
+    </p>
+  </section>
+
+  <section class="mt-14" aria-labelledby="work-heading">
+    <div class="mb-5 flex items-baseline justify-between">
+      <h2 id="work-heading" class="text-ink text-xl font-semibold tracking-tight">Case studies</h2>
+      <a href="/work" class="text-accent text-sm underline underline-offset-4">All work</a>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      {studies.map((entry, i) => <CaseStudyCard entry={entry} index={i} />)}
+    </div>
+  </section>
+
+  <section class="mt-16 grid gap-6 sm:grid-cols-3" aria-label="Quick facts">
+    <div>
+      <h2 class="text-faint mb-2 font-mono text-xs tracking-wide uppercase">Now</h2>
+      <p class="text-ink m-0 text-sm leading-relaxed">
+        ML engineer at Semorai (since 2023). CTO at Olber, evenings and weekends. Munich, since
+        2026.
+      </p>
+    </div>
+    <div>
+      <h2 class="text-faint mb-2 font-mono text-xs tracking-wide uppercase">Strongest at</h2>
+      <p class="text-ink m-0 text-sm leading-relaxed">
+        LLM pipelines that have to be cheap and correct; async Python and gRPC backends; making
+        long-running systems fail in boring ways.
+      </p>
+    </div>
+    <div>
+      <h2 class="text-faint mb-2 font-mono text-xs tracking-wide uppercase">Route</h2>
+      <p class="text-ink m-0 text-sm leading-relaxed">
+        Tashkent → Riga → Munich. <a
+          href="/journey"
+          class="text-accent underline underline-offset-4">The journey</a
+        >, with the hackathons in between.
+      </p>
+    </div>
+  </section>
 </Base>

@@ -1,0 +1,46 @@
+---
+title: A ledger that has to sum to zero
+summary: Olber is a services marketplace in Uzbekistan with a real-money escrow wallet, live on both app stores with over ten thousand registered users. The money side is an append-only ledger with a daily invariant, and the day the invariant failed is the interesting part.
+order: 4
+demo: escrow
+demoTitle: Architecture walkthrough
+context: Olber · co-founder & CTO · co-developed with two co-founders, outside working hours
+tags: [payments, PostgreSQL, row-level security, operations]
+numbers:
+  - value: 10,000+
+    label: registered users
+  - value: 212 / 115
+    label: migrations / pgTAP test files
+  - value: 37 → 13
+    label: audit findings → tested remediation migrations
+---
+
+import AuthorNote from '@/components/AuthorNote.astro';
+
+## The problem
+
+A client funds an order; a worker does the job; the platform holds the money in between and takes a commission. Every one of those steps can fail halfway — the card charge can succeed after the app gave up, a payout webhook can arrive twice, a database write can commit while the notification never sends — and the balance shown to a user has to be right regardless.
+
+## First attempt: a balance column
+
+The first wallet was a `balance` column updated in application code: charge succeeded, add; payout sent, subtract. It is what every tutorial does and it worked until it did not. A retried payout instruction subtracted twice. A webhook that arrived before the order row was committed updated nothing. There was no way to answer "why is this balance what it is" except by reading logs.
+
+<AuthorNote>
+  Your notes say the holds model was re-architected and a ledger-drift incident was resolved with
+  compensating entries; they do not say what the first design was. The "balance column" story above
+  is a plausible reconstruction — replace it with what you actually built first.
+</AuthorNote>
+
+## What worked
+
+- **Append-only ledger.** Every movement — deposit, hold, release, commission, payout, reversal — is an immutable entry. A balance is a sum. A mistake is corrected by a compensating entry that everyone can see, not by editing history.
+- **Business rules in the database.** Money-moving operations are database functions called under the user's role, with row-level security deciding who can touch which row. The mobile apps and the admin tools cannot disagree because neither of them computes anything. That is why there are 212 migrations and 115 pgTAP test files.
+- **Outbox for side effects.** Anything that must happen after commit — a payout instruction, a push notification — is written to an outbox table in the same transaction and delivered at-least-once by a worker. Every consumer is idempotent.
+- **Verified webhooks.** Aggregator events are HMAC-checked and de-duplicated by event id before they can touch the ledger. Card data is stored only in the encrypted form the payment flow requires.
+- **A daily invariant.** Once a day a reconciler sums every entry per wallet and compares it with the aggregator's report. Zero delta or a page.
+
+Security was handled the same way, as a unit: a row-level-security audit of the live platform produced 37 findings, remediated as 13 tested migrations that were themselves adversarially reviewed before shipping. The holds model was later re-architected and rolled out with no maintenance window. Details of individual findings stay out of a public page.
+
+## The number that moved
+
+The reconciler paged once. A ledger drift had opened between the wallet sums and the aggregator's report. The fix was a set of audited compensating entries — not a data patch — and the invariant went back to a verified zero delta. Since then: zero. That is the number.

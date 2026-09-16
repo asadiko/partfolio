@@ -1,0 +1,35 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'caseStudies'>;
+  index: number;
+}
+const { entry, index } = Astro.props;
+const { title, summary, demoTitle, numbers } = entry.data;
+const headline = numbers[0];
+---
+
+<a
+  href={`/work/${entry.id}`}
+  class="group border-line bg-surface hover:border-accent flex flex-col gap-3 rounded-xl border p-5 transition-colors"
+>
+  <span
+    class="text-faint flex items-center justify-between font-mono text-[11px] tracking-wide uppercase"
+  >
+    <span>{String(index + 1).padStart(2, '0')} · {demoTitle}</span>
+    <span class="text-accent opacity-0 transition-opacity group-hover:opacity-100"
+      >interactive →</span
+    >
+  </span>
+  <span class="text-ink text-lg font-semibold tracking-tight text-balance">{title}</span>
+  <span class="text-muted text-sm leading-relaxed">{summary}</span>
+  {
+    headline && (
+      <span class="mt-auto flex items-baseline gap-2 pt-2">
+        <span class="text-ink text-xl font-semibold tabular-nums">{headline.value}</span>
+        <span class="text-faint text-xs">{headline.label}</span>
+      </span>
+    )
+  }
+</a>

@@ -1,0 +1,47 @@
+---
+title: Keeping a ten-minute request alive
+summary: Document analysis takes minutes, runs through a proxy that kills idle connections after sixty seconds, and depends on model endpoints that time out, return broken JSON or disappear. Inject each failure and watch what the system does about it.
+order: 3
+demo: playground
+demoTitle: Failure-mode playground
+context: Semorai GmbH · extraction service (built) and LLM gateway (co-developed)
+tags: [reliability, gRPC streaming, circuit breaker, cancellation]
+numbers:
+  - value: 21,000+
+    label: test lines contributed to a ~1,000-case suite
+  - value: '3'
+    label: load-balanced model endpoints behind one gateway
+  - value: '6'
+    label: languages for streamed progress messages
+---
+
+import AuthorNote from '@/components/AuthorNote.astro';
+
+## The problem
+
+A single document analysis is a server-streaming RPC that runs for minutes, fans out dozens of model calls, and reports progress as it goes. Everything between the client and the model has a timeout, and none of them agree.
+
+## First attempt: retries and a generous timeout
+
+The first version handled failure the way most first versions do: a flat timeout per model call, a retry loop, and a big deadline on the outer request. Three things went wrong, in this order.
+
+Long documents died at exactly sixty seconds with a connection error — the reverse proxy in front of the service closed any stream that had been silent for a minute, and dense pages take longer than that to extract. Then, once heartbeats fixed that, cancelled requests kept running: closing the tab stopped the client from listening but not the service from working, so abandoned jobs held concurrency slots and spent model budget. And the flat timeout was wrong for every call — too short for a batch of twelve requirements with a page image, too long for a two-line classification — so it fired on healthy big calls and waited forever on dead small ones.
+
+## What worked
+
+- **Heartbeats on a timer, not on progress.** The service emits an empty progress frame every fifteen seconds while any task is in flight, independent of whether the model has produced anything. The proxy's idle timeout never fires, and its configuration — owned by another team — never had to change.
+- **Cancellation all the way down.** The stream's context cancel propagates to every pending task; in-flight upstream calls are aborted; the admission slot is released within milliseconds. Structured concurrency, no orphans, no half-written output.
+- **Bounded admission with runtime-adjustable limits.** The service accepts a fixed number of concurrent analyses and queues the rest with heartbeats, so a burst degrades to waiting rather than to timeouts. Concurrency inside an analysis is resource-aware.
+- **Repair at every parse site.** Model output that hits the token limit is truncated JSON. Each parse site strips fences, closes open structures, accepts the complete items, and re-requests only the missing ones with a smaller output budget.
+- **A gateway that owns retries.** The shared LLM gateway routes by least-in-flight across three endpoints, uses a token-aware adaptive timeout instead of a flat one, and runs a circuit breaker per endpoint with cooldown, half-open probes and a probation period so a flapping endpoint cannot re-enter rotation at full weight. Backpressure to callers is explicit.
+
+The playground is a scripted simulation of those mechanisms on a generic topology. It is not connected to anything; every scenario is a deterministic event list, tested for structural sanity.
+
+## The number that moved
+
+<AuthorNote>
+  Your notes do not contain a measured before/after for this work (for example, share of
+  long-running requests that failed with UNAVAILABLE before and after heartbeats, or p99 time to
+  release a slot after cancel). If one exists internally and is shareable, it belongs here. The
+  evidenced numbers are in the header: 21,000+ test lines contributed to a ~1,000-case suite.
+</AuthorNote>

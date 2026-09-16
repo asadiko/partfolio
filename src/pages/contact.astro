@@ -1,0 +1,42 @@
+---
+import PageHeader from '@/components/PageHeader.astro';
+import Base from '@/layouts/Base.astro';
+import { site } from '@/site';
+
+const links = [
+  { label: 'Email', href: `mailto:${site.email}`, text: site.email },
+  { label: 'GitHub', href: site.github, text: site.github.replace('https://', '') },
+  { label: 'LinkedIn', href: site.linkedin, text: 'linkedin.com/in/asadulla-ravshanbekov' },
+  { label: 'CV', href: site.cvPath, text: 'PDF, two pages' },
+];
+---
+
+<Base title="Contact" description="Email, GitHub, LinkedIn and CV.">
+  <PageHeader
+    title="Contact"
+    lede="Open to ML / applied-AI engineering roles in Germany and remote EU. Email is fastest."
+  />
+  <dl class="m-0 max-w-xl">
+    {
+      links.map((l) => (
+        <div class="border-line flex flex-col gap-1 border-b py-4 sm:flex-row sm:items-baseline sm:gap-6">
+          <dt class="text-faint w-24 shrink-0 font-mono text-xs tracking-wide uppercase">
+            {l.label}
+          </dt>
+          <dd class="m-0">
+            <a
+              class="text-accent underline underline-offset-4"
+              href={l.href}
+              rel={l.href.startsWith('http') ? 'me noopener' : undefined}
+            >
+              {l.text}
+            </a>
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+  <p class="text-muted mt-8 max-w-xl text-sm">
+    No contact form on purpose: this site has no backend, and a mailto link cannot be abused.
+  </p>
+</Base>

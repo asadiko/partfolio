@@ -1,0 +1,47 @@
+---
+title: Answers that cannot cite what they did not read
+summary: A feasibility engine answers "can we build this requirement?" from what past projects actually did. The model is only allowed to say things it can point at, and the demo lets you switch that rule off to see the difference.
+order: 2
+demo: grounding
+demoTitle: Retrieval and grounding
+context: Semorai GmbH · production service · built the feasibility engine and the learning loop
+tags: [RAG, citation grounding, evaluation, ablation]
+numbers:
+  - value: 6/10 → 9/10
+    label: end-to-end document classification after the learning loop
+  - value: '7'
+    label: injection formats compared in the ablation
+  - value: '1'
+    label: corrective retry, never more
+---
+
+import AuthorNote from '@/components/AuthorNote.astro';
+
+## The problem
+
+Given a new requirement, the useful question is not "is this feasible in general" but "have we built something like this before, and how did it go". The answer has to be traceable — a reviewer who disagrees needs to open the evidence — and a model asked to reason about history will happily produce confident, well-formatted, unverifiable history.
+
+## First attempt: retrieve, then ask nicely
+
+The first design retrieved similar past requirements, put them in the prompt, and asked the model for a verdict with references. The verdicts read well. The references were the problem: the model cited passages that were in its general knowledge but not in the prompt, merged two retrieved passages into one that did not exist, and when retrieval came back thin it filled the gap with something plausible. Nothing in the pipeline could tell a real citation from a fluent one.
+
+Separately, the first learning loop — feeding reviewer corrections back into the pipeline — summarised corrections into rule files with a pair of models and injected the bullets into prompts. The rules were generic by the time two models had paraphrased them, and there was no way to say which correction a given hint came from.
+
+## What worked
+
+- **Citations are labels, not free text.** Retrieved evidence goes into the prompt with short labels (`H1`, `R2`) and the model must cite by label. Any claim whose labels are not in the retrieved set is stripped, and the batch is retried once with the stripped claims called out. Once — a second failure returns a shorter answer rather than a loop. The model structurally cannot cite history it did not retrieve.
+- **Rank evidence before reasoning.** Concurrent retrieval with multi-query expansion, then ranking with per-type floors so historical verdicts are not crowded out by reference documents. A near-identical past requirement with an explicit verdict short-circuits with no model call.
+- **Batch the reasoning.** Ten requirements per call with their evidence, which is what made the citation check cheap enough to run on everything.
+- **Retrieve corrections, don't summarise them.** The second learning loop stores each reviewer correction as its own retrievable record and injects the nearest ones as hints behind a coverage gate, with tenant isolation verified in tests. A seven-variant ablation chose the injection format.
+
+The demo uses passages from RFC 9110 as the corpus. Turn the grounding check off and ask the same question: the unsupported claim survives, highlighted, and reads exactly as confidently as the supported ones. That contrast is the whole argument.
+
+## The number that moved
+
+End-to-end document classification on a ten-document corpus went from 6/10 to 9/10 after the second learning loop, with zero regressions on the rest of the suite. For the citation check itself the honest statement is qualitative: after it shipped, a feasibility verdict without an openable source stopped being possible.
+
+<AuthorNote>
+  The "first attempt" for the citation check (hallucinated references before stripping existed) is
+  reconstructed from the design, not from your notes. Confirm or replace it with what actually
+  happened. If you have a measured rate of stripped claims per batch, add it to the number section.
+</AuthorNote>

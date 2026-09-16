@@ -13,6 +13,11 @@ export const callRuleSchema = z.object({
   fixedLatencyMs: z.number().nonnegative().default(0),
 });
 
+const costTierSchema = z.object({
+  unitCost: z.number().positive(),
+  latencyMs: z.number().positive(),
+});
+
 export const pipelineStageSchema = z.object({
   id,
   name: z.string(),
@@ -35,10 +40,7 @@ export const pipelineFixtureSchema = z.object({
   }),
   costModel: z.object({
     batchOverhead: z.number().nonnegative(),
-    tiers: z.record(
-      z.enum(['cheap', 'strong']),
-      z.object({ unitCost: z.number().positive(), latencyMs: z.number().positive() }),
-    ),
+    tiers: z.object({ cheap: costTierSchema, strong: costTierSchema }),
   }),
   stages: z.array(pipelineStageSchema).min(1),
 });
@@ -92,7 +94,10 @@ export const diagramSpecSchema = z
     for (const edge of spec.edges) {
       for (const end of [edge.from, edge.to]) {
         if (!nodeIds.has(end)) {
-          ctx.addIssue({ code: 'custom', message: `edge ${edge.id} references unknown node ${end}` });
+          ctx.addIssue({
+            code: 'custom',
+            message: `edge ${edge.id} references unknown node ${end}`,
+          });
         }
       }
     }

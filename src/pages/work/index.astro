@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content';
+
+import CaseStudyCard from '@/components/CaseStudyCard.astro';
+import PageHeader from '@/components/PageHeader.astro';
+import Base from '@/layouts/Base.astro';
+
+const studies = (await getCollection('caseStudies')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base
+  title="Work"
+  description="Four interactive case studies: a batched LLM pipeline, citation-grounded retrieval, a failure-mode playground, and an escrow ledger."
+>
+  <PageHeader
+    title="Work"
+    lede="Each case study follows the same shape: the problem, the first attempt and why it failed, what worked, and the number that moved. Each has something to click."
+  />
+  <div class="grid gap-4 sm:grid-cols-2">
+    {studies.map((entry, i) => <CaseStudyCard entry={entry} index={i} />)}
+  </div>
+</Base>

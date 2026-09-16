@@ -1,0 +1,49 @@
+---
+title: Eight hundred model calls per document
+summary: An LLM service that turns engineering specifications into structured, classified requirements was correct but slow and expensive. The rewrite cut model calls per document by roughly an order of magnitude without changing the interface.
+order: 1
+demo: pipeline
+demoTitle: Pipeline explorer
+context: Semorai GmbH · production service · primary developer of v2
+tags: [LLM pipelines, batching, asyncio, gRPC]
+numbers:
+  - value: ~10×
+    label: fewer model calls per document (architectural, hedged)
+  - value: '219'
+    label: automated releases of the v2 service
+  - value: ~½
+    label: of all commits on the v2 service
+---
+
+import AuthorNote from '@/components/AuthorNote.astro';
+
+## The problem
+
+Enterprise engineering documents — hundreds of pages of numbered clauses, cross-references to standards, tables and diagrams — need to become a list of requirements a team can review: each one categorised, rated for criticality, assigned to a team and given a first feasibility opinion. The first version of the service did this correctly, and a long document could take the better part of an hour and cost more in model calls than anyone was comfortable with.
+
+## First attempt: one question per requirement per stage
+
+Version one was built the obvious way. Each stage asked the model about one requirement at a time: one call to categorise it, one for criticality, one for the owning team, one or two for feasibility, and a call per page for extraction and for standards references. Clean, easy to reason about, easy to test in isolation.
+
+It failed on arithmetic. A document with 140 requirements meant several hundred enrichment calls before anything else, each carrying the same system prompt. Per-call latency stacked serially inside a stage. Any timeout or malformed response was a retry of a tiny unit of work, so the retry budget was spent on overhead rather than on the hard pages. And the model never saw neighbouring requirements, so labels drifted: the same clause phrased two ways got two categories.
+
+## What worked
+
+The rewrite kept the gRPC interface identical so the two versions could be A/B'd on the same documents, and changed what a single model call is asked to do.
+
+- **Batch the per-requirement stages.** One call enriches ten to fifteen requirements and returns all four fields at once. Fewer round-trips, one system prompt per batch, and the model sees context, which made the labels more consistent, not less.
+- **Triage pages before extracting them.** One cheap call over the whole document marks tables of contents, title and approval pages as skippable. Roughly a third of a typical document never reaches the expensive model. The same triage produces an expected count per page that a recall guard uses to notice under-extraction and retry with a stronger model.
+- **Run pages concurrently, not serially.** Extraction is one strong call per page, but sixteen pages in flight at a time under a resource-aware limit.
+- **Deterministic first, model last.** Standards references (ISO 8601, RFC 5234, …) were originally listed by the model page by page; it missed some, invented others and spelled the same code four ways. A prefix-agnostic scanner with canonicalisation, range expansion and cross-page merging does the work; a cheap model call filters false positives at the very end. This came out of a root-cause analysis of production output and was validated on a 71-page document with 212 codes.
+- **Reuse what was already computed.** A byte-identical re-upload is recognised by content hash and returns the previous result with zero model calls.
+
+The explorer above runs an illustrative cost model of the two designs on a public IETF standard, because that is the same shape of document — normative clauses, cross-references, boilerplate pages — without any client material.
+
+## The number that moved
+
+Per-document model calls dropped by roughly an order of magnitude. I say "roughly" on purpose: the design doc's headline figures were targets, not measurements, and the honest claim is the architectural one — per-item calls became `ceil(items / batch)` calls, which anyone can verify from the pipeline structure. Along the way the v2 service shipped 219 automated releases, and I was the primary developer with about half of all commits and most of the integration work.
+
+<AuthorNote>
+  If you have one internal, shareable before/after measurement for a real document (wall-clock or
+  cost), put it here. One measured number beats the hedged sentence above.
+</AuthorNote>

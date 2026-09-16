@@ -1,0 +1,87 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+
+import Base from '@/layouts/Base.astro';
+import { EscrowTour } from '@/islands/escrow/EscrowTour';
+import { GroundingDemo } from '@/islands/grounding/GroundingDemo';
+import { PipelineExplorer } from '@/islands/pipeline/PipelineExplorer';
+import { FailurePlayground } from '@/islands/playground/FailurePlayground';
+
+export async function getStaticPaths() {
+  const studies = await getCollection('caseStudies');
+  return studies.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+interface Props {
+  entry: CollectionEntry<'caseStudies'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, context, tags, numbers, demo, demoTitle } = entry.data;
+
+const all = (await getCollection('caseStudies')).sort((a, b) => a.data.order - b.data.order);
+const position = all.findIndex((e) => e.id === entry.id);
+const next = all[(position + 1) % all.length];
+---
+
+<Base title={title} description={summary}>
+  <article>
+    <header class="max-w-3xl">
+      <p class="text-faint mb-2 font-mono text-xs tracking-wide uppercase">
+        Case study {String(position + 1).padStart(2, '0')} · {context}
+      </p>
+      <h1 class="text-ink text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        {title}
+      </h1>
+      <p class="text-muted mt-4 text-lg leading-relaxed text-pretty">{summary}</p>
+      <ul class="m-0 mt-4 flex list-none flex-wrap gap-2 p-0" aria-label="Topics">
+        {
+          tags.map((tag) => (
+            <li class="border-line text-muted rounded-full border px-2.5 py-0.5 font-mono text-[11px]">
+              {tag}
+            </li>
+          ))
+        }
+      </ul>
+    </header>
+
+    {
+      numbers.length > 0 && (
+        <dl class="mt-8 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+          {numbers.map((n) => (
+            <div class="border-line bg-surface rounded-lg border px-4 py-3">
+              <dd class="text-ink m-0 text-2xl font-semibold tabular-nums">{n.value}</dd>
+              <dt class="text-muted mt-1 text-xs">{n.label}</dt>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    <section class="mt-12" aria-labelledby="demo-heading">
+      <h2 id="demo-heading" class="text-ink mb-4 text-xl font-semibold tracking-tight">
+        {demoTitle}
+      </h2>
+      {demo === 'pipeline' && <PipelineExplorer client:visible />}
+      {demo === 'grounding' && <GroundingDemo client:visible />}
+      {demo === 'playground' && <FailurePlayground client:visible />}
+      {demo === 'escrow' && <EscrowTour client:visible />}
+    </section>
+
+    <div class="prose-site mt-14">
+      <Content />
+    </div>
+
+    {
+      next && (
+        <nav class="border-line mt-16 border-t pt-6" aria-label="Next case study">
+          <a href={`/work/${next.id}`} class="text-accent text-sm underline underline-offset-4">
+            Next: {next.data.title} →
+          </a>
+        </nav>
+      )
+    }
+  </article>
+</Base>

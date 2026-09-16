@@ -1,0 +1,29 @@
+---
+import { getCollection } from 'astro:content';
+
+import PageHeader from '@/components/PageHeader.astro';
+import { JourneyMap } from '@/islands/journey/JourneyMap';
+import type { Milestone } from '@/islands/journey/types';
+import Base from '@/layouts/Base.astro';
+
+const entries = (await getCollection('journey')).sort((a, b) => a.data.order - b.data.order);
+const milestones: Milestone[] = entries.map((e) => ({
+  id: e.id,
+  title: e.data.title,
+  date: e.data.date,
+  city: e.data.city,
+  kind: e.data.kind,
+  body: (e.body ?? '').trim(),
+}));
+---
+
+<Base
+  title="Journey"
+  description="Tashkent to Riga to Munich: school, university, first job in the first semester, hackathons across the Nordics and Baltics, founding Olber, moving to Germany."
+>
+  <PageHeader
+    title="Tashkent → Riga → Munich"
+    lede="Fourteen years of school in Tashkent, a degree and a job in Riga, a company founded in between, and now Munich. Use the arrow keys or click a milestone."
+  />
+  <JourneyMap client:visible milestones={milestones} />
+</Base>

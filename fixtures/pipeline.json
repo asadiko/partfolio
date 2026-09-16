@@ -60,7 +60,13 @@
       "why": "Four separate per-requirement stages meant four system prompts, four round-trips and four chances to time out for every single clause. One batched call sees neighbouring requirements too, which improves consistency of the labels.",
       "guards": "Model output is parsed defensively at every site; a malformed batch is repaired or re-requested rather than dropped. Reviewer corrections from earlier projects are injected as hints behind a coverage gate.",
       "naive": { "per": "requirement", "model": "strong", "calls": 4, "concurrency": 2 },
-      "batched": { "per": "requirement", "model": "strong", "calls": 1, "batch": 12, "concurrency": 6 }
+      "batched": {
+        "per": "requirement",
+        "model": "strong",
+        "calls": 1,
+        "batch": 12,
+        "concurrency": 6
+      }
     },
     {
       "id": "feasibility",
@@ -69,7 +75,13 @@
       "why": "Without retrieval the model answers from general knowledge and sounds confident about things nobody in the company has ever built. With retrieval and mandatory citations, every verdict points at something a human can open.",
       "guards": "Claims without a citation to retrieved evidence are stripped and the batch is retried once. Near-identical past requirements with an explicit verdict short-circuit with no model call at all.",
       "naive": { "per": "requirement", "model": "strong", "calls": 2, "concurrency": 2 },
-      "batched": { "per": "requirement", "model": "strong", "calls": 1, "batch": 10, "concurrency": 8 }
+      "batched": {
+        "per": "requirement",
+        "model": "strong",
+        "calls": 1,
+        "batch": 10,
+        "concurrency": 8
+      }
     },
     {
       "id": "finalize",
@@ -87,7 +99,13 @@
       "why": "Translating one string per call made this stage the slowest in the pipeline for a step that adds no intelligence.",
       "guards": "Translation uses a cheap model with an explicit fallback chain; a failed batch retries item by item so one bad string cannot block a document.",
       "naive": { "per": "requirement-language", "model": "cheap", "calls": 1, "concurrency": 4 },
-      "batched": { "per": "requirement-language", "model": "cheap", "calls": 1, "batch": 25, "concurrency": 4 }
+      "batched": {
+        "per": "requirement-language",
+        "model": "cheap",
+        "calls": 1,
+        "batch": 25,
+        "concurrency": 4
+      }
     }
   ]
 }

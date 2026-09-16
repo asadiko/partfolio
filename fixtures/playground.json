@@ -8,7 +8,10 @@
         "id": "client",
         "label": "Client",
         "sublabel": "web app / API caller",
-        "x": 20, "y": 170, "w": 150, "h": 64,
+        "x": 20,
+        "y": 170,
+        "w": 150,
+        "h": 64,
         "card": {
           "job": "Opens a server-streaming RPC and renders progress while a multi-minute job runs.",
           "guards": "Cancelling from here must actually stop work upstream, not just stop listening.",
@@ -19,7 +22,10 @@
         "id": "proxy",
         "label": "Reverse proxy",
         "sublabel": "idle timeout 60 s",
-        "x": 220, "y": 170, "w": 150, "h": 64,
+        "x": 220,
+        "y": 170,
+        "w": 150,
+        "h": 64,
         "card": {
           "job": "TLS termination, routing, and the idle timeout that protects the fleet from abandoned connections.",
           "guards": "Connections that nobody is reading any more.",
@@ -30,7 +36,10 @@
         "id": "service",
         "label": "Extraction service",
         "sublabel": "admission · heartbeat · cancel",
-        "x": 420, "y": 170, "w": 160, "h": 64,
+        "x": 420,
+        "y": 170,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "Runs the document pipeline: classify, triage, extract per page, batched enrichment, feasibility, translation. Streams progress back.",
           "guards": "Overload (bounded admission with runtime-adjustable limits), proxy idle kills (queue heartbeats), leaked work on cancel (structured concurrency), malformed model output (repair at every parse site).",
@@ -41,7 +50,10 @@
         "id": "gateway",
         "label": "LLM gateway",
         "sublabel": "breaker · least-in-flight · cost",
-        "x": 630, "y": 170, "w": 160, "h": 64,
+        "x": 630,
+        "y": 170,
+        "w": 160,
+        "h": 64,
         "card": {
           "job": "One OpenAI-compatible door for every service: model aliases, parameter normalisation per model family, load balancing across endpoints, per-call cost attribution.",
           "guards": "A single slow or failing endpoint taking the platform down (circuit breaker with cooldown and probation), flat timeouts that are wrong for every prompt size (token-aware adaptive timeout), unbounded fan-in (admission with explicit backpressure).",
@@ -52,7 +64,10 @@
         "id": "ep-a",
         "label": "Model endpoint A",
         "sublabel": "region 1",
-        "x": 840, "y": 40, "w": 140, "h": 56,
+        "x": 840,
+        "y": 40,
+        "w": 140,
+        "h": 56,
         "card": {
           "job": "A hosted model deployment behind a quota.",
           "guards": "Nothing — it is the thing everything else guards against.",
@@ -63,7 +78,10 @@
         "id": "ep-b",
         "label": "Model endpoint B",
         "sublabel": "region 2",
-        "x": 840, "y": 172, "w": 140, "h": 56,
+        "x": 840,
+        "y": 172,
+        "w": 140,
+        "h": 56,
         "card": {
           "job": "Same model, different region and quota.",
           "guards": "Regional incidents and per-endpoint rate limits.",
@@ -74,7 +92,10 @@
         "id": "ep-c",
         "label": "Model endpoint C",
         "sublabel": "region 3",
-        "x": 840, "y": 304, "w": 140, "h": 56,
+        "x": 840,
+        "y": 304,
+        "w": 140,
+        "h": 56,
         "card": {
           "job": "Third endpoint; normally receives the least traffic.",
           "guards": "Two simultaneous regional outages.",
@@ -83,23 +104,107 @@
       }
     ],
     "edges": [
-      { "id": "client-proxy", "from": "client", "to": "proxy", "label": "gRPC stream", "flow": "Request: document reference, processing options, deadline" },
-      { "id": "proxy-client", "from": "proxy", "to": "client", "label": "", "flow": "Response stream: progress frames, heartbeats, final result" },
-      { "id": "proxy-service", "from": "proxy", "to": "service", "label": "", "flow": "Forwarded stream with cancellation propagated as context cancel" },
-      { "id": "service-proxy", "from": "service", "to": "proxy", "label": "", "flow": "Progress frames every stage; heartbeat frames every 15 s while idle" },
-      { "id": "service-gateway", "from": "service", "to": "gateway", "label": "chat completions", "flow": "Batched prompts with JSON schema, model alias, token budget" },
-      { "id": "gateway-service", "from": "gateway", "to": "service", "label": "", "flow": "Parsed completion, token usage, attempt count, cost attribution" },
-      { "id": "gateway-a", "from": "gateway", "to": "ep-a", "label": "", "flow": "HTTPS request to endpoint A with adaptive timeout" },
-      { "id": "gateway-b", "from": "gateway", "to": "ep-b", "label": "", "flow": "HTTPS request to endpoint B (fallback / least-in-flight)" },
-      { "id": "gateway-c", "from": "gateway", "to": "ep-c", "label": "", "flow": "HTTPS request to endpoint C (last resort)" }
+      {
+        "id": "client-proxy",
+        "from": "client",
+        "to": "proxy",
+        "label": "gRPC stream",
+        "flow": "Request: document reference, processing options, deadline"
+      },
+      {
+        "id": "proxy-client",
+        "from": "proxy",
+        "to": "client",
+        "label": "",
+        "flow": "Response stream: progress frames, heartbeats, final result"
+      },
+      {
+        "id": "proxy-service",
+        "from": "proxy",
+        "to": "service",
+        "label": "",
+        "flow": "Forwarded stream with cancellation propagated as context cancel"
+      },
+      {
+        "id": "service-proxy",
+        "from": "service",
+        "to": "proxy",
+        "label": "",
+        "flow": "Progress frames every stage; heartbeat frames every 15 s while idle"
+      },
+      {
+        "id": "service-gateway",
+        "from": "service",
+        "to": "gateway",
+        "label": "chat completions",
+        "flow": "Batched prompts with JSON schema, model alias, token budget"
+      },
+      {
+        "id": "gateway-service",
+        "from": "gateway",
+        "to": "service",
+        "label": "",
+        "flow": "Parsed completion, token usage, attempt count, cost attribution"
+      },
+      {
+        "id": "gateway-a",
+        "from": "gateway",
+        "to": "ep-a",
+        "label": "",
+        "flow": "HTTPS request to endpoint A with adaptive timeout"
+      },
+      {
+        "id": "gateway-b",
+        "from": "gateway",
+        "to": "ep-b",
+        "label": "",
+        "flow": "HTTPS request to endpoint B (fallback / least-in-flight)"
+      },
+      {
+        "id": "gateway-c",
+        "from": "gateway",
+        "to": "ep-c",
+        "label": "",
+        "flow": "HTTPS request to endpoint C (last resort)"
+      }
     ]
   },
   "scenarios": [
-    { "id": "happy-path", "label": "Happy path", "description": "A 96-page document, no surprises. Use this as the baseline before injecting anything.", "guard": "Progress streaming and least-in-flight routing." },
-    { "id": "malformed-output", "label": "Malformed model output", "description": "The model hits its output limit and returns truncated JSON for a batch of twelve items.", "guard": "Repair at every parse site, partial-batch acceptance, and a narrower retry — nothing is dropped silently." },
-    { "id": "endpoint-timeout", "label": "Endpoint timeout", "description": "One endpoint stops producing tokens. A flat 30-second timeout would either fire too early on big prompts or too late on small ones.", "guard": "Token-aware adaptive timeout, per-failure-class cooldown, retry on the next least-loaded endpoint." },
-    { "id": "client-cancel", "label": "Client cancels", "description": "The user closes the tab two minutes into a job. Everything in flight must stop and release its slot.", "guard": "End-to-end cancellation: context cancel → task cancel → upstream abort → admission slot freed." },
-    { "id": "provider-outage", "label": "Provider outage", "description": "Two of three endpoints return 503 at the same time.", "guard": "Circuit breaker with open → half-open → probation states and anti-flap, plus backpressure to the caller." },
-    { "id": "proxy-idle-kill", "label": "Proxy idle timeout", "description": "Dense pages take 40 seconds each; the proxy closes any stream that is silent for 60 seconds.", "guard": "Queue heartbeats emitted on a timer, independent of model output." }
+    {
+      "id": "happy-path",
+      "label": "Happy path",
+      "description": "A 96-page document, no surprises. Use this as the baseline before injecting anything.",
+      "guard": "Progress streaming and least-in-flight routing."
+    },
+    {
+      "id": "malformed-output",
+      "label": "Malformed model output",
+      "description": "The model hits its output limit and returns truncated JSON for a batch of twelve items.",
+      "guard": "Repair at every parse site, partial-batch acceptance, and a narrower retry — nothing is dropped silently."
+    },
+    {
+      "id": "endpoint-timeout",
+      "label": "Endpoint timeout",
+      "description": "One endpoint stops producing tokens. A flat 30-second timeout would either fire too early on big prompts or too late on small ones.",
+      "guard": "Token-aware adaptive timeout, per-failure-class cooldown, retry on the next least-loaded endpoint."
+    },
+    {
+      "id": "client-cancel",
+      "label": "Client cancels",
+      "description": "The user closes the tab two minutes into a job. Everything in flight must stop and release its slot.",
+      "guard": "End-to-end cancellation: context cancel → task cancel → upstream abort → admission slot freed."
+    },
+    {
+      "id": "provider-outage",
+      "label": "Provider outage",
+      "description": "Two of three endpoints return 503 at the same time.",
+      "guard": "Circuit breaker with open → half-open → probation states and anti-flap, plus backpressure to the caller."
+    },
+    {
+      "id": "proxy-idle-kill",
+      "label": "Proxy idle timeout",
+      "description": "Dense pages take 40 seconds each; the proxy closes any stream that is silent for 60 seconds.",
+      "guard": "Queue heartbeats emitted on a timer, independent of model output."
+    }
   ]
 }
