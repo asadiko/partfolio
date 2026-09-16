@@ -1,66 +1,73 @@
-# asadiko.github.io
+# partfolio
 
-Personal portfolio. The home page is a 3D room with a procedurally modelled iMac G3 (three.js); turning it on boots "AsadOS", a late-90s-style desktop where four interactive, fixture-driven case studies (a batched LLM pipeline, citation-grounded retrieval, a failure-mode playground, an escrow-ledger walkthrough), a journey map, about and contact run as windows. The same content exists as plain pages (`/work/*`, `/journey`, `/about`, `/contact`) — the fallback when WebGL is unavailable or motion is reduced, and what search engines index. Fully static — no backend, no API keys, no tracking.
+Portfolio of Asadulla Ravshanbekov, machine learning engineer (LLM systems, production AI, backends).
+Live at **https://asadiko.github.io/partfolio/**.
+
+## What it is
+
+The home page is a 3D office with an iMac G3 built from primitives in three.js. Turning it on boots
+**AsadOS**, a late-90s-style desktop rendered as real DOM. Its apps are the portfolio:
+
+| App       | What it shows                                                                                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pipeline  | A 17-stage LLM document pipeline as a workflow graph; toggle naive vs. batched design and watch calls, latency and cost change                        |
+| Grounding | Retrieval + citation check on RFC 9110 passages; switch the check off to see unsupported claims survive                                               |
+| Failures  | Inject malformed output, timeouts, cancellation, provider outage or a proxy idle-kill into a client → gateway → model topology and watch the recovery |
+| Ledger    | Guided walkthrough of an escrow wallet: append-only ledger, outbox, verified webhooks, daily zero-delta invariant                                     |
+| Journey   | A globe with the route Tashkent → Riga → Munich and the milestones along it                                                                           |
+| Terminal  | `help`, `ls ~/work`, `open <app>` — a keyboard-only way to everything                                                                                 |
+
+Every demo runs on fixture data in `fixtures/`. Nothing calls a model or a server; each demo says so.
+The same content exists as plain pages (`/work/*`, `/journey`, `/about`, `/contact`) for search engines
+and for browsers without WebGL or with reduced motion.
 
 ## Stack
 
-Astro 7 (static output) · React 19 islands · three.js (home page only, loaded lazily) · TypeScript strict · Tailwind v4 · zod-validated fixtures · Vitest · Playwright smoke test · ESLint (jsx-a11y strict) + Prettier · Docker for every workflow.
+- **Astro 7**, static output, MDX content collections, sitemap
+- **React 19** islands for the interactive parts, hydrated on visibility
+- **three.js** for the office room and the globe — procedural geometry, `RoomEnvironment` lighting,
+  Natural Earth coastlines (public domain, 20 KB) painted onto the globe at runtime
+- **TypeScript** strict, **Tailwind v4**, **zod**-validated fixtures
+- **Vitest** for the engines and reducers, **Playwright** smoke test in its own container
+- **ESLint** (typescript-eslint, jsx-a11y strict, react-hooks) and **Prettier**
+- **Docker** for every workflow; **GitHub Actions** for CI and Pages deploy
 
-## Run it (Docker only)
+## Run
 
 ```bash
-docker compose up --build dev          # http://localhost:4321 — hot reload, bind-mounted source
-docker compose run --rm --build test   # astro check + eslint + prettier --check + vitest
-docker compose up --build preview      # http://localhost:8080/partfolio/ — production build behind nginx, same base path as GitHub Pages
-docker compose run --rm --build e2e    # Playwright smoke test against the preview: routes, viewports, every demo
+docker compose up --build dev          # http://localhost:4321/partfolio/  hot reload
+docker compose run --rm --build test   # astro check · eslint · prettier · vitest
+docker compose up --build preview      # http://localhost:8080/partfolio/  production build behind nginx
+docker compose run --rm --build e2e    # Playwright: every route × 3 viewports, every demo, boot → desktop → shutdown
 ```
 
-Nothing needs to be installed on the host. After changing dependencies, recreate the dev container so its
-`node_modules` volume is refreshed: `docker compose up --build -V dev`. To change the lockfile without a host
-Node: `docker run --rm -v "$PWD":/app -w /app node:22-alpine npm install --package-lock-only <pkg>`.
+Nothing is installed on the host. After changing dependencies: `docker compose up --build -V dev`.
+To edit the lockfile without host Node: `docker run --rm -v "$PWD":/app -w /app node:22-alpine npm install --package-lock-only <pkg>`.
 
 ## Layout
 
 ```
-fixtures/            demo data — extend these to change what the demos show
-  pipeline.json      document profile, cost model, stage catalogue (naive vs batched call rules)
-  grounding.json     RFC 9110 passages, canned questions, drafts and corrective retries
-  playground.json    LLM-pipeline topology (nodes, edges, cards) and scenario copy
-  escrow.json        escrow-wallet topology and the guided-tour steps
-src/
-  content/           MDX/Markdown — case studies, journey milestones, about, (empty) blog
-  engines/           pure simulation logic with tests: pipeline cost model, grounding, scenarios
-  scene/             three.js: office room (iMac model, props, lighting), CRT painter, globe, tween scheduler
-  assets/            land-110m.json — Natural Earth coastlines (public domain), painted onto the globe at runtime
-  os/                AsadOS: window-manager reducer (tested), menu bar, windows, apps, terminal parser (tested)
-  islands/           React islands (hydrated on visibility) + the shared SVG Diagram; Desk.tsx runs the home page
-  components/        Astro components (no client JS)
-  pages/             routes
-  lib/               Zod schemas, fixture loaders, formatting, reduced-motion hook
-docker/nginx.conf    preview server config
-e2e/                 Playwright smoke test (runs in its own container against the preview)
+fixtures/          demo data (pipeline graph + cost model, RFC corpus, failure scenarios, escrow tour)
+src/content/       MDX — case studies, journey milestones, about, blog (empty)
+src/engines/       pure, tested simulation logic: pipeline cost model, grounding, scenarios
+src/os/            AsadOS: window-manager reducer, menu bar, windows, apps, terminal parser
+src/scene/         three.js: office + iMac, CRT painter, globe, tween scheduler
+src/islands/       React islands; Desk.tsx runs the home page (room → boot → desktop → shutdown)
+src/lib/           zod schemas, fixture loaders, formatting, cx, reduced-motion hook
+e2e/               Playwright smoke test
+docker/nginx.conf  preview server
 ```
-
-Fixtures are parsed with Zod at import time, so a malformed fixture fails the build rather than the page.
 
 ## Editing content
 
-- Case studies: `src/content/case-studies/*.mdx`. Frontmatter picks the demo (`demo: pipeline | grounding | playground | escrow`) and the headline numbers. Body follows problem → first attempt → what worked → the number that moved.
-- Journey: one Markdown file per milestone in `src/content/journey/`, ordered by `order`.
-- Blog: drop `.mdx` files into `src/content/blog/`; the list at `/blog` and the post pages already exist. Add a nav link in `src/site.ts` when there is something to read.
-- Site-wide constants (name, links, tagline): `src/site.ts`.
-- `<AuthorNote>` callouts mark text only the author can write. Remove them before deploying.
+- Case studies: `src/content/case-studies/*.mdx` — frontmatter picks the demo and headline numbers;
+  body follows problem → first attempt → what worked → the number that moved.
+- Journey: one file per milestone in `src/content/journey/`.
+- Site constants (name, links, tagline): `src/site.ts`. Internal links go through `withBase()`.
+- `<AuthorNote>` callouts mark text only the author can write. Remove before publishing.
 
-## Accessibility and performance
+## Deploy
 
-Content pages ship no JavaScript except the theme toggle; islands load when scrolled into view. The home page renders its HTML first and fades the WebGL canvas in; three.js (≈140 KB gzipped) is imported only there and only on the client. All demos are keyboard-operable; diagrams expose nodes as buttons and edges as labelled images. `prefers-reduced-motion` disables streaming and animation. Light/dark follow the system with a per-load toggle (nothing is persisted).
-
-## Deploy (GitHub Pages)
-
-Every push to `main` runs `.github/workflows/deploy.yml`: verify → build → publish to GitHub Pages at
-`https://asadiko.github.io/partfolio/`. The repository's Pages source must be **GitHub Actions**
-(Settings → Pages → Source).
-
-The site is built with `base: /partfolio` (see `astro.config.ts`); every internal link goes through
-`withBase()` from `src/site.ts`. To serve from the root instead, rename the repository to
-`asadiko.github.io` and build with `SITE_BASE=/`.
+Push to `main` → `.github/workflows/deploy.yml` verifies, builds and publishes to GitHub Pages.
+The repository's Pages source must be **GitHub Actions** (Settings → Pages). The site is built with
+`base: /partfolio`; to serve from the root, rename the repo to `asadiko.github.io` and build with `SITE_BASE=/`.
