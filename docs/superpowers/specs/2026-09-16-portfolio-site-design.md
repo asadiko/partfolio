@@ -115,3 +115,16 @@ or arrow keys move the active milestone; the route segment to the active city is
 ## Out of scope
 
 Blog posts, analytics, forms, 3D/WebGL, any network call at runtime, i18n.
+
+## Revision 2 — "AsadOS" (2026-09-16, approved)
+
+The owner asked for a creative, three.js-based home. `/` becomes a 3D room with a procedurally modelled iMac G3;
+clicking its screen boots a late-90s-style desktop (original design, not an Apple clone) rendered as real DOM.
+The four demos, the journey map, about and contact become windows/apps; a small terminal offers a
+keyboard-only path. Existing routes stay as the text fallback and for search engines. No WebGL or
+`prefers-reduced-motion` → land directly on the desktop. Three.js is loaded only on `/`, client-side.
+
+Modules: `src/scene/` (pure three.js: room, iMac, CRT canvas texture, camera tweens), `src/os/` (window
+manager reducer, menu bar, windows, app registry, terminal parser), `src/islands/Desk.tsx` (state machine:
+room → booting → desktop → shutdown). Case-study prose is rendered to HTML at build time with the Astro
+container API and passed to the desktop as props.
