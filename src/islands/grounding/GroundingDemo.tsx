@@ -228,6 +228,19 @@ export function GroundingDemo() {
                 sources={chunks}
               />
             )}
+            {showRetry && result.firstPass && (
+              <div className="border-line mt-4 border-t pt-3">
+                <p className="text-faint m-0 mb-2 font-mono text-[11px] tracking-wide uppercase">
+                  Stripped from the first draft
+                </p>
+                <ClaimList
+                  claims={result.firstPass.filter((c) => c.status === 'stripped')}
+                  revealed={Number.MAX_SAFE_INTEGER}
+                  showChecks
+                  sources={chunks}
+                />
+              </div>
+            )}
             {phase === 'done' && (
               <p className="text-muted border-line m-0 mt-3 border-t pt-3 text-xs">
                 {supported} supported ·{' '}
@@ -268,14 +281,14 @@ function ClaimList({
             className={[
               'rounded-md border px-3 py-2 text-sm leading-relaxed transition-colors duration-500',
               stripped
-                ? 'border-fail/40 text-muted decoration-fail/70 line-through'
+                ? 'border-fail/40 text-muted'
                 : bad
                   ? 'border-warn/60 bg-warn/10 text-ink'
                   : 'border-line text-ink',
             ].join(' ')}
           >
-            {claim.text}
-            <span className="mt-1 flex flex-wrap gap-1 no-underline">
+            <span className={stripped ? 'decoration-fail/70 line-through' : ''}>{claim.text}</span>
+            <span className="mt-1 flex flex-wrap gap-1">
               {claim.sourceIds.length === 0 && <Cite text="no source" tone="fail" />}
               {claim.sourceIds.map((id) => (
                 <Cite
@@ -286,7 +299,7 @@ function ClaimList({
               ))}
             </span>
             {bad && (
-              <span className="text-fail mt-1 block font-mono text-[11px] no-underline">
+              <span className="text-fail mt-1 block font-mono text-[11px]">
                 {stripped ? 'stripped — ' : 'unsupported — '}
                 cites a source that was not retrieved
               </span>

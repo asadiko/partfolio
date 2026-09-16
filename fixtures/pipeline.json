@@ -12,8 +12,14 @@
   "costModel": {
     "batchOverhead": 0.12,
     "tiers": {
-      "cheap": { "unitCost": 1, "latencyMs": 900 },
-      "strong": { "unitCost": 14, "latencyMs": 4200 }
+      "cheap": {
+        "unitCost": 1,
+        "latencyMs": 900
+      },
+      "strong": {
+        "unitCost": 14,
+        "latencyMs": 4200
+      }
     }
   },
   "stages": [
@@ -23,8 +29,16 @@
       "summary": "One cheap call decides what kind of document arrived: a requirements spec, a standards list, a diagram, or a reference document. Everything downstream branches on that answer.",
       "why": "A spec and a norms catalogue need opposite treatment. Guessing wrong wastes every later call, so the decision is made first, once, and cheaply.",
       "guards": "Per-customer document conventions are looked up rather than inferred, so a recurring house format never gets re-guessed.",
-      "naive": { "per": "document", "model": "cheap", "calls": 1 },
-      "batched": { "per": "document", "model": "cheap", "calls": 1 }
+      "naive": {
+        "per": "document",
+        "model": "cheap",
+        "calls": 1
+      },
+      "batched": {
+        "per": "document",
+        "model": "cheap",
+        "calls": 1
+      }
     },
     {
       "id": "triage",
@@ -32,8 +46,17 @@
       "summary": "Decide which pages carry requirements at all. Tables of contents, title pages, approval sheets and blank pages are dropped before anything expensive runs.",
       "why": "About a third of a typical document is not extractable. Skipping it is the cheapest optimisation in the whole pipeline.",
       "guards": "The triage result also sets an expected requirement count per page, which the recall guard uses later to notice under-extraction.",
-      "naive": { "per": "page", "model": "cheap", "calls": 1, "concurrency": 4 },
-      "batched": { "per": "document", "model": "cheap", "calls": 1 }
+      "naive": {
+        "per": "page",
+        "model": "cheap",
+        "calls": 1,
+        "concurrency": 4
+      },
+      "batched": {
+        "per": "document",
+        "model": "cheap",
+        "calls": 1
+      }
     },
     {
       "id": "extract",
@@ -41,8 +64,18 @@
       "summary": "One strong call per extractable page, the page image as primary input and the markdown text as context. Pages run concurrently, not serially.",
       "why": "Layout carries meaning in engineering documents — tables, indents, numbered clauses. Text-only extraction lost it; vision-first extraction keeps it.",
       "guards": "Page metadata (drawing refs, page numbers) is fenced with explicit do-not-extract markers so it cannot become a ghost requirement. A recall guard retries any page whose yield is far below the triage estimate.",
-      "naive": { "per": "page", "model": "strong", "calls": 1, "concurrency": 1 },
-      "batched": { "per": "page", "model": "strong", "calls": 1, "concurrency": 16 }
+      "naive": {
+        "per": "page",
+        "model": "strong",
+        "calls": 1,
+        "concurrency": 4
+      },
+      "batched": {
+        "per": "page",
+        "model": "strong",
+        "calls": 1,
+        "concurrency": 16
+      }
     },
     {
       "id": "standards",
@@ -50,8 +83,18 @@
       "summary": "Find every referenced standard (ISO 8601, RFC 5234, …), normalise the spelling, expand ranges, merge duplicates across pages. Deterministic code does the work; a cheap model call filters false positives at the end.",
       "why": "The first version asked the model to list codes page by page. It missed some, invented others, and formatted the same code four ways. A prefix-agnostic scanner is exhaustive and deterministic; the model is only asked the one question it is good at — is this really a standard?",
       "guards": "Canonicalisation and cross-page merge happen before the model sees anything, so it cannot re-introduce duplicates.",
-      "naive": { "per": "page", "model": "strong", "calls": 1, "concurrency": 1 },
-      "batched": { "per": "document", "model": "cheap", "calls": 1, "fixedLatencyMs": 120 }
+      "naive": {
+        "per": "page",
+        "model": "strong",
+        "calls": 1,
+        "concurrency": 4
+      },
+      "batched": {
+        "per": "document",
+        "model": "cheap",
+        "calls": 1,
+        "fixedLatencyMs": 120
+      }
     },
     {
       "id": "enrich",
@@ -59,7 +102,12 @@
       "summary": "Category, criticality, owning team and a first feasibility opinion for each requirement — all four fields from one batched call over ten to fifteen requirements at a time.",
       "why": "Four separate per-requirement stages meant four system prompts, four round-trips and four chances to time out for every single clause. One batched call sees neighbouring requirements too, which improves consistency of the labels.",
       "guards": "Model output is parsed defensively at every site; a malformed batch is repaired or re-requested rather than dropped. Reviewer corrections from earlier projects are injected as hints behind a coverage gate.",
-      "naive": { "per": "requirement", "model": "strong", "calls": 4, "concurrency": 2 },
+      "naive": {
+        "per": "requirement",
+        "model": "strong",
+        "calls": 4,
+        "concurrency": 4
+      },
       "batched": {
         "per": "requirement",
         "model": "strong",
@@ -74,7 +122,12 @@
       "summary": "For each requirement, retrieve what past projects said about similar clauses, rank the evidence, then reason over a batch of ten with citation labels the model must use.",
       "why": "Without retrieval the model answers from general knowledge and sounds confident about things nobody in the company has ever built. With retrieval and mandatory citations, every verdict points at something a human can open.",
       "guards": "Claims without a citation to retrieved evidence are stripped and the batch is retried once. Near-identical past requirements with an explicit verdict short-circuit with no model call at all.",
-      "naive": { "per": "requirement", "model": "strong", "calls": 2, "concurrency": 2 },
+      "naive": {
+        "per": "requirement",
+        "model": "strong",
+        "calls": 2,
+        "concurrency": 4
+      },
       "batched": {
         "per": "requirement",
         "model": "strong",
@@ -89,8 +142,16 @@
       "summary": "Rule-based de-duplication across files, one call to summarise the project goal, one to extract basic document metadata.",
       "why": "De-duplication is a set operation; it never needed a model. Keeping it deterministic makes the output stable between runs.",
       "guards": "Byte-identical re-uploads are recognised by content hash and reuse the previous result with zero calls.",
-      "naive": { "per": "document", "model": "strong", "calls": 2 },
-      "batched": { "per": "document", "model": "strong", "calls": 2 }
+      "naive": {
+        "per": "document",
+        "model": "strong",
+        "calls": 2
+      },
+      "batched": {
+        "per": "document",
+        "model": "strong",
+        "calls": 2
+      }
     },
     {
       "id": "translate",
@@ -98,7 +159,12 @@
       "summary": "Every requirement text into each target language. Batched twenty-five strings per call, cached in memory so repeated phrases translate once.",
       "why": "Translating one string per call made this stage the slowest in the pipeline for a step that adds no intelligence.",
       "guards": "Translation uses a cheap model with an explicit fallback chain; a failed batch retries item by item so one bad string cannot block a document.",
-      "naive": { "per": "requirement-language", "model": "cheap", "calls": 1, "concurrency": 4 },
+      "naive": {
+        "per": "requirement-language",
+        "model": "cheap",
+        "calls": 1,
+        "concurrency": 4
+      },
       "batched": {
         "per": "requirement-language",
         "model": "cheap",

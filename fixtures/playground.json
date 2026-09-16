@@ -10,7 +10,7 @@
         "sublabel": "web app / API caller",
         "x": 20,
         "y": 170,
-        "w": 150,
+        "w": 140,
         "h": 64,
         "card": {
           "job": "Opens a server-streaming RPC and renders progress while a multi-minute job runs.",
@@ -22,9 +22,9 @@
         "id": "proxy",
         "label": "Reverse proxy",
         "sublabel": "idle timeout 60 s",
-        "x": 220,
+        "x": 200,
         "y": 170,
-        "w": 150,
+        "w": 140,
         "h": 64,
         "card": {
           "job": "TLS termination, routing, and the idle timeout that protects the fleet from abandoned connections.",
@@ -35,10 +35,10 @@
       {
         "id": "service",
         "label": "Extraction service",
-        "sublabel": "admission · heartbeat · cancel",
-        "x": 420,
+        "sublabel": "admission · heartbeats",
+        "x": 380,
         "y": 170,
-        "w": 160,
+        "w": 200,
         "h": 64,
         "card": {
           "job": "Runs the document pipeline: classify, triage, extract per page, batched enrichment, feasibility, translation. Streams progress back.",
@@ -49,10 +49,10 @@
       {
         "id": "gateway",
         "label": "LLM gateway",
-        "sublabel": "breaker · least-in-flight · cost",
-        "x": 630,
+        "sublabel": "breaker · balancer · cost",
+        "x": 620,
         "y": 170,
-        "w": 160,
+        "w": 200,
         "h": 64,
         "card": {
           "job": "One OpenAI-compatible door for every service: model aliases, parameter normalisation per model family, load balancing across endpoints, per-call cost attribution.",
@@ -62,11 +62,11 @@
       },
       {
         "id": "ep-a",
-        "label": "Model endpoint A",
-        "sublabel": "region 1",
-        "x": 840,
+        "label": "Endpoint A",
+        "sublabel": "region A",
+        "x": 860,
         "y": 40,
-        "w": 140,
+        "w": 120,
         "h": 56,
         "card": {
           "job": "A hosted model deployment behind a quota.",
@@ -76,11 +76,11 @@
       },
       {
         "id": "ep-b",
-        "label": "Model endpoint B",
-        "sublabel": "region 2",
-        "x": 840,
+        "label": "Endpoint B",
+        "sublabel": "region B",
+        "x": 860,
         "y": 172,
-        "w": 140,
+        "w": 120,
         "h": 56,
         "card": {
           "job": "Same model, different region and quota.",
@@ -90,11 +90,11 @@
       },
       {
         "id": "ep-c",
-        "label": "Model endpoint C",
-        "sublabel": "region 3",
-        "x": 840,
+        "label": "Endpoint C",
+        "sublabel": "region C",
+        "x": 860,
         "y": 304,
-        "w": 140,
+        "w": 120,
         "h": 56,
         "card": {
           "job": "Third endpoint; normally receives the least traffic.",
@@ -108,7 +108,7 @@
         "id": "client-proxy",
         "from": "client",
         "to": "proxy",
-        "label": "gRPC stream",
+        "label": "gRPC",
         "flow": "Request: document reference, processing options, deadline"
       },
       {
@@ -136,7 +136,7 @@
         "id": "service-gateway",
         "from": "service",
         "to": "gateway",
-        "label": "chat completions",
+        "label": "LLM",
         "flow": "Batched prompts with JSON schema, model alias, token budget"
       },
       {

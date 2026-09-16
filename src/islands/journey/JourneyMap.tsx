@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react';
 
 import { usePrefersReducedMotion } from '@/lib/motion';
 
-import { VIEW, cityPoints, hubOf, route, segmentPath } from './map';
+import { VIEW, cityPoints, hubOf, labelPosition, route, segmentPath } from './map';
 import type { City, Milestone, MilestoneKind } from './types';
 
 const kindLabel: Record<MilestoneKind, string> = {
@@ -96,21 +96,19 @@ export function JourneyMap({ milestones }: { milestones: Milestone[] }) {
                   <circle
                     cx={p.x}
                     cy={p.y}
-                    r={p.major ? 18 : 12}
+                    r={p.major ? 22 : 14}
                     className="fill-accent/20 journey-pulse"
                   />
                 )}
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={p.major ? 7 : 4}
+                  r={p.major ? 9 : 5}
                   className={`transition-[fill] duration-500 ${visited || on ? 'fill-accent' : 'fill-faint'}`}
                 />
                 <text
-                  x={p.x}
-                  y={p.y + (p.major ? 28 : 20)}
-                  textAnchor="middle"
-                  className={`${p.major ? 'text-[15px] font-medium' : 'text-[12px]'} ${on ? 'fill-ink' : 'fill-muted'}`}
+                  {...labelPosition(p)}
+                  className={`${p.major ? 'text-[22px] font-medium' : 'text-[16px]'} ${on ? 'fill-ink' : 'fill-muted'}`}
                 >
                   {p.label}
                 </text>

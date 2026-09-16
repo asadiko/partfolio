@@ -126,9 +126,18 @@
   .prose-site p {
     margin: 0 0 1.1rem;
   }
+  .prose-site ul {
+    list-style: disc;
+  }
+  .prose-site ol {
+    list-style: decimal;
+  }
   .prose-site :is(ul, ol) {
     padding-left: 1.25rem;
     margin: 0 0 1.1rem;
+  }
+  .prose-site li::marker {
+    color: var(--faint);
   }
   .prose-site li {
     margin-bottom: 0.35rem;
