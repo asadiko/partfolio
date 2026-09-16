@@ -18,6 +18,8 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   build: {
+    // `work.html` rather than `work/index.html`, so GitHub Pages serves /work without a redirect.
+    format: 'file',
     inlineStylesheets: 'auto',
   },
   prefetch: {
